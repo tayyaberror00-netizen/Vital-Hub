@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="static-prefix" content="{% static 'frontend/' %}">
+    <title>Vital Hub | Precision Healthcare</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="{% static 'frontend/CSS/style.css' %}">
+    <style>
+        /* ── FAQ category tags ── */
+        .faq-tag { cursor:pointer; transition:all 0.2s ease; }
+        .faq-tag.active-tag { background:#2563eb; color:#fff; }
+
+        /* ── Mobile nav ── */
+        #mobile-nav { transition: opacity 0.3s ease, transform 0.3s ease; }
+
+
+    </style>
+</head>
+<body class="bg-white font-sans text-slate-900 overflow-x-hidden">
+
+    <div id="progress-bar"></div>
+
+    <!-- ═══════════ STANDARD HEADER ═══════════ -->
+    <header class="site-header flex justify-between items-center px-6 lg:px-12 py-4 lg:py-6 bg-white/95 backdrop-blur-sm sticky top-0 z-50 border-b border-slate-50">
+        <div class="flex items-center gap-2 cursor-pointer" onclick="window.location.href='index.html'">
+            <div class="bg-blue-600 p-1.5 lg:p-2 rounded-xl text-white shadow-lg shadow-blue-100">
+                <i data-lucide="activity" class="w-5 h-5"></i>
+            </div>
+            <span class="text-xl lg:text-2xl font-black tracking-tighter text-blue-900 uppercase">Vital Hub</span>
+        </div>
+        <nav class="hidden lg:flex gap-10 text-[10px] font-black uppercase tracking-widest text-slate-400">
+            <a href="index.html"      class="nav-link text-blue-600">Home</a>
+            <a href="store.html"      class="nav-link hover:text-blue-600 transition">Store</a>
+            <a href="nutrition.html"  class="nav-link hover:text-blue-600 transition">Nutrition AI</a>
+            <a href="xray.html"       class="nav-link hover:text-blue-600 transition">X-Ray</a>
+            <a href="report-analyzer.html" class="nav-link hover:text-blue-600 transition">Report Analyzer</a>
+            <a href="appointment.html" class="nav-link hover:text-blue-600 transition">Appointments</a>
+        </nav>
+        <div class="flex items-center gap-4 lg:gap-6">
+            <a href="checkout.html" class="relative group">
+                <i data-lucide="shopping-cart" class="text-slate-400 group-hover:text-blue-600 transition w-5 h-5"></i>
+                <span id="cart-count" class="absolute -top-2 -right-2 bg-blue-600 text-white text-[10px] w-4 h-4 rounded-full items-center justify-center font-bold" style="display:none;">0</span>
+            </a>
+            <button onclick="window.location.href='auth.html'" id="join-now-btn" class="hidden sm:block btn-shimmer bg-blue-600 text-white px-5 lg:px-8 py-2.5 lg:py-3 rounded-full font-bold text-[10px] shadow-xl shadow-blue-100 hover:bg-slate-900 transition-all duration-300">
+                JOIN NOW
+            </button>
+            <button class="lg:hidden p-2 text-slate-400 hover:text-blue-600 transition" onclick="toggleMobileNav()">
+                <i data-lucide="menu" class="w-5 h-5"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Mobile Nav Overlay -->
+    <div id="mobile-nav" class="hidden fixed inset-0 bg-white z-[200] flex flex-col items-center justify-center gap-8">
+        <button onclick="toggleMobileNav()" class="absolute top-6 right-6 p-2 text-slate-400 hover:text-slate-900 transition">
+            <i data-lucide="x" class="w-6 h-6"></i>
+        </button>
+        <div class="flex items-center gap-2 mb-4">
+            <div class="bg-blue-600 p-2 rounded-xl text-white"><i data-lucide="activity"></i></div>
+            <span class="text-2xl font-black tracking-tighter text-blue-900 uppercase">Vital Hub</span>
+        </div>
+        <a href="index.html"       class="text-2xl font-black uppercase tracking-widest text-slate-900 hover:text-blue-600 transition">Home</a>
+        <a href="store.html"       class="text-2xl font-black uppercase tracking-widest text-slate-900 hover:text-blue-600 transition">Store</a>
+        <a href="nutrition.html"   class="text-2xl font-black uppercase tracking-widest text-slate-900 hover:text-blue-600 transition">Nutrition AI</a>
+        <a href="xray.html"        class="text-2xl font-black uppercase tracking-widest text-slate-900 hover:text-blue-600 transition">X-Ray</a>
+        <a href="appointment.html" class="text-2xl font-black uppercase tracking-widest text-slate-900 hover:text-blue-600 transition">Appointments</a>
+        <a href="auth.html" id="mobile-join-now-link" class="mt-4 bg-blue-600 text-white px-10 py-4 rounded-full text-sm font-black uppercase tracking-widest hover:bg-slate-900 transition">Join Now</a>
+    </div>
+
+    <!-- ═══════════ HERO ═══════════ -->
+    <section class="max-w-7xl mx-auto px-6 lg:px-12 py-12 lg:py-20 flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
+        <div class="flex-1 space-y-6 lg:space-y-8 text-center lg:text-left">
+            <div class="hero-badge bg-emerald-50 text-emerald-600 px-4 py-1.5 rounded-full text-[9px] lg:text-[10px] font-black tracking-widest uppercase inline-flex items-center gap-2">
+                <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span> The Future of Healthcare
+            </div>
+            <h1 class="hero-h1 text-5xl lg:text-8xl font-black leading-[0.9] text-slate-900 tracking-tighter">
+                Your Health, <br> <span class="text-blue-600">Reimagined.</span>
+            </h1>
+            <p class="hero-p text-slate-400 text-base lg:text-lg leading-relaxed max-w-lg mx-auto lg:mx-0 font-medium">
+                Experience the next generation of medical e-commerce. AI-powered diagnostics, AR product visualization, and personalized care.
+            </p>
+            <div class="hero-btns flex flex-col sm:flex-row gap-4 pt-4 justify-center lg:justify-start">
+                <a href="auth.html" class="btn-shimmer bg-blue-600 text-white px-10 py-5 rounded-xl font-black shadow-2xl shadow-blue-200 hover:-translate-y-1 hover:shadow-blue-300 transition-all duration-300 text-center">
+                    Get Started
+                </a>
+                <a href="store.html" class="bg-white border-2 border-slate-100 text-slate-900 px-10 py-5 rounded-xl font-black hover:bg-slate-50 hover:border-slate-200 hover:-translate-y-1 transition-all duration-300 text-center">
+                    View Store
+                </a>
+            </div>
+        </div>
+        <div class="hero-image flex-1 relative w-full">
+            <div class="absolute -inset-4 bg-blue-50 rounded-[60px] blur-3xl opacity-50 -z-10"></div>
+            <img src="{% static 'frontend/images/welcome.avif' %}" alt="Vital Hub — AI-powered healthcare platform"
+                class="hero-float rounded-[30px] lg:rounded-[50px] shadow-2xl border-4 lg:border-8 border-white object-cover aspect-[4/3] w-full">
+        </div>
+    </section>
+
+    <!-- ═══════════ PARTNERS TICKER ═══════════ -->
+    <section class="py-12 bg-white border-y border-slate-50 reveal">
+        <div class="max-w-7xl mx-auto px-6 lg:px-12">
+            <p class="text-center text-[10px] font-black uppercase tracking-[0.3em] text-slate-300 mb-8">Our Clinical Partners</p>
+            <div class="ticker-wrap">
+                <div class="ticker-track gap-16 lg:gap-24 opacity-40">
+                    <span class="font-black text-xl lg:text-2xl text-slate-900 tracking-tighter mx-8">HEALTH-LINE</span>
+                    <span class="font-black text-xl lg:text-2xl text-slate-900 tracking-tighter mx-8">MED-CORE</span>
+                    <span class="font-black text-xl lg:text-2xl text-slate-900 tracking-tighter mx-8">VITAL-SYNC</span>
+                    <span class="font-black text-xl lg:text-2xl text-slate-900 tracking-tighter mx-8">NEURO-LABS</span>
+                    <span class="font-black text-xl lg:text-2xl text-slate-900 tracking-tighter mx-8">BIO-REACH</span>
+                    <span class="font-black text-xl lg:text-2xl text-slate-900 tracking-tighter mx-8">CLINIC-AI</span>
+                    <span class="font-black text-xl lg:text-2xl text-slate-900 tracking-tighter mx-8">HEALTH-LINE</span>
+                    <span class="font-black text-xl lg:text-2xl text-slate-900 tracking-tighter mx-8">MED-CORE</span>
+                    <span class="font-black text-xl lg:text-2xl text-slate-900 tracking-tighter mx-8">VITAL-SYNC</span>
+                    <span class="font-black text-xl lg:text-2xl text-slate-900 tracking-tighter mx-8">NEURO-LABS</span>
+                    <span class="font-black text-xl lg:text-2xl text-slate-900 tracking-tighter mx-8">BIO-REACH</span>
+                    <span class="font-black text-xl lg:text-2xl text-slate-900 tracking-tighter mx-8">CLINIC-AI</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════ VISION ═══════════ -->
+    <section class="py-16 lg:py-24 bg-slate-900 text-white overflow-hidden relative reveal" data-stats-section>
+        <div class="max-w-7xl mx-auto px-6 lg:px-12 relative z-10">
+            <div class="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+                <div class="text-center lg:text-left">
+                    <h4 class="text-blue-500 font-black uppercase tracking-[0.3em] text-xs mb-6">Our Core Vision</h4>
+                    <h2 class="text-4xl lg:text-5xl font-black mb-8 leading-tight tracking-tighter">Bridging the gap between <span class="text-blue-400">technology</span> and <span class="text-emerald-400">humanity</span>.</h2>
+                    <p class="text-slate-400 text-lg leading-relaxed mb-8">Vital Hub isn't just a store; it's a lifelong health partner. We believe medical precision should be accessible from your living room.</p>
+                    <div class="flex flex-wrap justify-center lg:justify-start gap-8 lg:gap-12">
+                        <div>
+                            <p class="stat-number text-2xl lg:text-3xl font-black text-white" data-target="99.8" data-suffix="%">99.8%</p>
+                            <p class="text-slate-500 text-[10px] uppercase font-bold tracking-widest mt-2">AI Accuracy</p>
+                        </div>
+                        <div>
+                            <p class="text-2xl lg:text-3xl font-black text-white">24/7</p>
+                            <p class="text-slate-500 text-[10px] uppercase font-bold tracking-widest mt-2">Clinical Support</p>
+                        </div>
+                        <div>
+                            <p class="stat-number text-2xl lg:text-3xl font-black text-white" data-target="100" data-suffix="+">100+</p>
+                            <p class="text-slate-500 text-[10px] uppercase font-bold tracking-widest mt-2">Medical Brands</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="rounded-[40px] lg:rounded-[60px] aspect-square relative group overflow-hidden border border-slate-800">
+                    <img src="{% static 'frontend/images/vision1.avif' %}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="Vision">
+                    <div class="absolute inset-0 bg-blue-600/0 group-hover:bg-blue-600/10 transition-colors duration-700"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════ SERVICES ═══════════ -->
+    <section class="py-16 lg:py-24 px-6 lg:px-12 bg-white reveal">
+        <div class="text-center max-w-2xl mx-auto mb-16 lg:mb-20 space-y-4">
+            <h2 class="text-3xl lg:text-4xl font-black tracking-tighter text-slate-900 uppercase">Ecosystem Services</h2>
+            <div class="h-1 w-20 bg-blue-600 mx-auto rounded-full"></div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 max-w-7xl mx-auto reveal-stagger">
+            <div class="service-card p-8 lg:p-10 border border-slate-100 rounded-[40px] hover:shadow-2xl hover:shadow-blue-50 hover:-translate-y-2 transition-all duration-300 group cursor-pointer" onclick="window.location.href='store.html'">
+                <div class="service-icon bg-blue-50 w-16 h-16 rounded-2xl flex items-center justify-center mb-8 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300"><i data-lucide="shopping-bag" size="28"></i></div>
+                <h4 class="text-xl font-black mb-4 text-slate-800">Smart Store</h4>
+                <p class="text-slate-400 text-sm leading-relaxed">Shop verified medical equipment with 3D previews and AR integration.</p>
+            </div>
+            <div class="service-card p-8 lg:p-10 border border-slate-100 rounded-[40px] hover:shadow-2xl hover:shadow-emerald-50 hover:-translate-y-2 transition-all duration-300 group cursor-pointer" onclick="window.location.href='nutrition.html'">
+                <div class="service-icon bg-emerald-50 w-16 h-16 rounded-2xl flex items-center justify-center mb-8 group-hover:bg-emerald-600 group-hover:text-white transition-all duration-300"><i data-lucide="brain-circuit" size="28"></i></div>
+                <h4 class="text-xl font-black mb-4 text-slate-800">Nutrition AI</h4>
+                <p class="text-slate-400 text-sm leading-relaxed">Personalized meal planning driven by your biological data and health goals.</p>
+            </div>
+            <div class="service-card p-8 lg:p-10 border border-slate-100 rounded-[40px] hover:shadow-2xl hover:shadow-purple-50 hover:-translate-y-2 transition-all duration-300 group cursor-pointer" onclick="window.location.href='xray.html'">
+                <div class="service-icon bg-purple-50 w-16 h-16 rounded-2xl flex items-center justify-center mb-8 group-hover:bg-purple-600 group-hover:text-white transition-all duration-300"><i data-lucide="microscope" size="28"></i></div>
+                <h4 class="text-xl font-black mb-4 text-slate-800">Remote Labs</h4>
+                <p class="text-slate-400 text-sm leading-relaxed">Upload scans for instant AI-assisted preliminary diagnostics.</p>
+            </div>
+            <div class="service-card p-8 lg:p-10 border border-slate-100 rounded-[40px] hover:shadow-2xl hover:shadow-rose-50 hover:-translate-y-2 transition-all duration-300 group cursor-pointer" onclick="window.location.href='appointment.html'">
+                <div class="service-icon bg-rose-50 w-16 h-16 rounded-2xl flex items-center justify-center mb-8 group-hover:bg-rose-600 group-hover:text-white transition-all duration-300"><i data-lucide="video" size="28"></i></div>
+                <h4 class="text-xl font-black mb-4 text-slate-800">Tele-Visits</h4>
+                <p class="text-slate-400 text-sm leading-relaxed">Book live consultations with certified medical specialists worldwide.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════ JOURNEY STEPS ═══════════ -->
+    <section class="py-16 lg:py-24 px-6 lg:px-12 bg-white reveal">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center max-w-2xl mx-auto mb-16 lg:mb-20 space-y-4">
+                <h2 class="text-3xl lg:text-4xl font-black tracking-tighter text-slate-900 uppercase">The Vital Journey</h2>
+                <div class="h-1 w-20 bg-blue-600 mx-auto rounded-full"></div>
+                <p class="text-slate-400 font-medium px-4">Three simple steps to professional medical insights.</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-12 lg:gap-16 reveal-stagger">
+                <div class="step-group space-y-4 group text-center md:text-left">
+                    <span class="step-num text-5xl lg:text-6xl font-black text-blue-50 group-hover:text-blue-100 transition-colors">01</span>
+                    <h4 class="text-xl font-black text-slate-900 uppercase tracking-tight">Upload Data</h4>
+                    <p class="text-slate-400 text-sm leading-relaxed">Sync your wearable devices or upload scans to our secure cloud.</p>
+                </div>
+                <div class="step-group space-y-4 group text-center md:text-left">
+                    <span class="step-num text-5xl lg:text-6xl font-black text-emerald-50 group-hover:text-emerald-100 transition-colors">02</span>
+                    <h4 class="text-xl font-black text-slate-900 uppercase tracking-tight">AI Analysis</h4>
+                    <p class="text-slate-400 text-sm leading-relaxed">Our algorithms analyze your biological markers in real-time.</p>
+                </div>
+                <div class="step-group space-y-4 group text-center md:text-left">
+                    <span class="step-num text-5xl lg:text-6xl font-black text-purple-50 group-hover:text-purple-100 transition-colors">03</span>
+                    <h4 class="text-xl font-black text-slate-900 uppercase tracking-tight">Expert Review</h4>
+                    <p class="text-slate-400 text-sm leading-relaxed">Book a tele-visit to confirm findings and receive a personalised care plan.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════ PRODUCTS ═══════════ -->
+    <section class="py-16 lg:py-24 px-6 lg:px-12 bg-slate-50 reveal">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex flex-col md:flex-row justify-between items-center md:items-end mb-12 gap-6">
+                <div class="text-center md:text-left">
+                    <h2 class="text-3xl lg:text-4xl font-black mb-2 text-slate-900 tracking-tighter uppercase">Essential Gear</h2>
+                    <p class="text-slate-400 text-xs font-medium uppercase tracking-widest">Top Rated Monitoring Tools</p>
+                </div>
+                <a href="store.html" class="text-blue-600 font-black text-xs uppercase tracking-widest flex items-center gap-2 hover:gap-4 transition-all duration-300 group">
+                    Explore Catalog <i data-lucide="arrow-right" size="16" class="group-hover:translate-x-1 transition-transform duration-300"></i>
+                </a>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 reveal-stagger">
+                <div class="bg-white p-8 rounded-[40px] shadow-sm hover:shadow-2xl transition-all duration-400 relative group cursor-pointer product-card-hover" onclick="window.location.href='store.html'">
+                    <div class="absolute top-8 left-8 text-[9px] font-black text-slate-300 uppercase tracking-widest">Medical Grade</div>
+                    <div class="w-full h-48 lg:h-56 flex items-center justify-center mb-6 overflow-hidden">
+                        <img src="{% static 'frontend/images/bp-moniter-main.avif' %}" class="max-h-full object-contain group-hover:scale-110 transition-transform duration-500" alt="BP Monitor">
+                    </div>
+                    <p class="text-blue-600 text-[10px] font-black uppercase mb-1">Cardiology</p>
+                    <h5 class="text-xl font-black mb-1 leading-tight text-slate-800">Smart Wrist BP Monitor</h5>
+                    <div class="flex justify-between items-center mt-8">
+                        <span class="text-xl lg:text-2xl font-black text-slate-900 tracking-tighter">Rs 11,999</span>
+                        <div class="bg-slate-900 text-white p-4 rounded-2xl group-hover:bg-blue-600 group-hover:rotate-12 transition-all duration-300 shadow-lg">
+                            <i data-lucide="arrow-up-right" size="20"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white p-8 rounded-[40px] shadow-sm hover:shadow-2xl transition-all duration-400 relative group cursor-pointer product-card-hover" onclick="window.location.href='store.html'">
+                    <div class="absolute top-8 left-8 text-[9px] font-black text-slate-300 uppercase tracking-widest">3D Ready</div>
+                    <div class="w-full h-48 lg:h-56 flex items-center justify-center mb-6 overflow-hidden">
+                        <img src="{% static 'frontend/images/weighting-scale-main.avif' %}" class="max-h-full object-contain group-hover:scale-110 transition-transform duration-500" alt="Scale">
+                    </div>
+                    <p class="text-emerald-500 text-[10px] font-black uppercase mb-1">Wellness</p>
+                    <h5 class="text-xl font-black mb-1 leading-tight text-slate-800">Glass Weighing Scale</h5>
+                    <div class="flex justify-between items-center mt-8">
+                        <span class="text-xl lg:text-2xl font-black text-slate-900 tracking-tighter">Rs 3,499</span>
+                        <div class="bg-slate-900 text-white p-4 rounded-2xl group-hover:bg-blue-600 group-hover:rotate-12 transition-all duration-300 shadow-lg">
+                            <i data-lucide="arrow-up-right" size="20"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white p-8 rounded-[40px] shadow-sm hover:shadow-2xl transition-all duration-400 relative group cursor-pointer product-card-hover" onclick="window.location.href='store.html'">
+                    <div class="absolute top-8 left-8 text-[9px] font-black text-slate-300 uppercase tracking-widest">Touchless</div>
+                    <div class="w-full h-48 lg:h-56 flex items-center justify-center mb-6 overflow-hidden">
+                        <img src="{% static 'frontend/images/thermometer-home.avif' %}" class="max-h-full object-contain group-hover:scale-110 transition-transform duration-500" alt="Thermometer">
+                    </div>
+                    <p class="text-purple-500 text-[10px] font-black uppercase mb-1">Diagnostic</p>
+                    <h5 class="text-xl font-black mb-1 leading-tight text-slate-800">Infrared Thermometer</h5>
+                    <div class="flex justify-between items-center mt-8">
+                        <span class="text-xl lg:text-2xl font-black text-slate-900 tracking-tighter">Rs 4,500</span>
+                        <div class="bg-slate-900 text-white p-4 rounded-2xl group-hover:bg-blue-600 group-hover:rotate-12 transition-all duration-300 shadow-lg">
+                            <i data-lucide="arrow-up-right" size="20"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════ EXPANDED FAQ ═══════════ -->
+    <section class="py-16 lg:py-24 px-6 lg:px-12 bg-white reveal">
+        <div class="max-w-4xl mx-auto">
+            <div class="text-center mb-12 lg:mb-16">
+                <div class="bg-blue-50 text-blue-600 px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest uppercase inline-block mb-4">Knowledge Base</div>
+                <h2 class="text-3xl lg:text-4xl font-black tracking-tighter text-slate-900 mb-4 uppercase">Patient FAQ</h2>
+                <p class="text-slate-400 font-medium">Common questions about the Vital Hub ecosystem.</p>
+            </div>
+
+            <!-- Category Filters -->
+            <div class="flex flex-wrap gap-3 justify-center mb-10" id="faq-filters">
+                <button class="faq-tag active-tag px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border border-blue-200 bg-blue-600 text-white" onclick="filterFAQ('all', this)">All</button>
+                <button class="faq-tag px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border border-slate-200 text-slate-500 hover:border-blue-300" onclick="filterFAQ('products', this)">Products</button>
+                <button class="faq-tag px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border border-slate-200 text-slate-500 hover:border-blue-300" onclick="filterFAQ('ai', this)">AI & Diagnostics</button>
+                <button class="faq-tag px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border border-slate-200 text-slate-500 hover:border-blue-300" onclick="filterFAQ('orders', this)">Orders & Shipping</button>
+                <button class="faq-tag px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border border-slate-200 text-slate-500 hover:border-blue-300" onclick="filterFAQ('account', this)">Account</button>
+            </div>
+
+            <div class="space-y-4" id="faq-list">
+
+                <!-- Products FAQs -->
+                <div class="faq-item border border-slate-100 rounded-3xl p-6 cursor-pointer hover:border-blue-200 transition-all" data-cat="products" onclick="toggleFAQ(this)">
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center gap-3">
+                            <span class="text-[8px] font-black bg-blue-50 text-blue-600 px-2 py-1 rounded-full uppercase tracking-wider">Products</span>
+                            <h5 class="font-black text-slate-800 tracking-tight text-sm lg:text-base">Are the medical devices FDA approved?</h5>
+                        </div>
+                        <i data-lucide="chevron-down" class="faq-icon text-slate-400 flex-shrink-0 ml-4 w-5 h-5"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <div class="mt-4 pt-4 border-t border-slate-100">
+                            <p class="text-slate-500 text-sm leading-relaxed">Yes, all electronic devices sold on Vital Hub are medically certified and undergo rigorous quality checks to meet international FDA and ISO standards. Each product page lists the applicable certifications. We also source exclusively from verified manufacturers with established clinical track records.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="faq-item border border-slate-100 rounded-3xl p-6 cursor-pointer hover:border-blue-200 transition-all" data-cat="products" onclick="toggleFAQ(this)">
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center gap-3">
+                            <span class="text-[8px] font-black bg-blue-50 text-blue-600 px-2 py-1 rounded-full uppercase tracking-wider">Products</span>
+                            <h5 class="font-black text-slate-800 tracking-tight text-sm lg:text-base">Do the wearables work with both Android and iOS?</h5>
+                        </div>
+                        <i data-lucide="chevron-down" class="faq-icon text-slate-400 flex-shrink-0 ml-4 w-5 h-5"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <div class="mt-4 pt-4 border-t border-slate-100">
+                            <p class="text-slate-500 text-sm leading-relaxed">Yes. All Vital Hub wearables — including the TK9 Smart Ring and LIGE Fitness Band — are compatible with Android 6.0+ and iOS 11.0+. Simply download the Vital Hub app (available on both stores) and pair via Bluetooth. Step-by-step setup guides are included in every package and available digitally on your product page.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="faq-item border border-slate-100 rounded-3xl p-6 cursor-pointer hover:border-blue-200 transition-all" data-cat="products" onclick="toggleFAQ(this)">
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center gap-3">
+                            <span class="text-[8px] font-black bg-blue-50 text-blue-600 px-2 py-1 rounded-full uppercase tracking-wider">Products</span>
+                            <h5 class="font-black text-slate-800 tracking-tight text-sm lg:text-base">What is the warranty period for devices?</h5>
+                        </div>
+                        <i data-lucide="chevron-down" class="faq-icon text-slate-400 flex-shrink-0 ml-4 w-5 h-5"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <div class="mt-4 pt-4 border-t border-slate-100">
+                            <p class="text-slate-500 text-sm leading-relaxed">All Vital Hub products carry a minimum 12-month manufacturer warranty. Premium items (smart rings, BP monitors, hearing amplifiers) come with an extended 24-month warranty. Warranty covers manufacturing defects and hardware failures under normal use. Physical damage and water damage are excluded unless the product is rated waterproof.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="faq-item border border-slate-100 rounded-3xl p-6 cursor-pointer hover:border-blue-200 transition-all" data-cat="products" onclick="toggleFAQ(this)">
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center gap-3">
+                            <span class="text-[8px] font-black bg-blue-50 text-blue-600 px-2 py-1 rounded-full uppercase tracking-wider">Products</span>
+                            <h5 class="font-black text-slate-800 tracking-tight text-sm lg:text-base">Can I view products in 3D / AR before buying?</h5>
+                        </div>
+                        <i data-lucide="chevron-down" class="faq-icon text-slate-400 flex-shrink-0 ml-4 w-5 h-5"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <div class="mt-4 pt-4 border-t border-slate-100">
+                            <p class="text-slate-500 text-sm leading-relaxed">Absolutely. Products tagged "3D • AR" in the store support augmented reality previews on mobile devices. Open the store on your smartphone, tap "View in Room", and point your camera at a flat surface. This uses WebXR technology — no app download required for supported browsers (Chrome 81+, Safari 14+). AR capability is indicated on each product card.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI & Diagnostics FAQs -->
+                <div class="faq-item border border-slate-100 rounded-3xl p-6 cursor-pointer hover:border-blue-200 transition-all" data-cat="ai" onclick="toggleFAQ(this)">
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center gap-3">
+                            <span class="text-[8px] font-black bg-purple-50 text-purple-600 px-2 py-1 rounded-full uppercase tracking-wider">AI</span>
+                            <h5 class="font-black text-slate-800 tracking-tight text-sm lg:text-base">How does the X-Ray AI diagnostic work?</h5>
+                        </div>
+                        <i data-lucide="chevron-down" class="faq-icon text-slate-400 flex-shrink-0 ml-4 w-5 h-5"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <div class="mt-4 pt-4 border-t border-slate-100">
+                            <p class="text-slate-500 text-sm leading-relaxed">Our Neural X-Ray engine uses a convolutional neural network trained on over 200,000 annotated radiological images to detect skeletal anomalies, fractures, and alignment deviations with 99.8% accuracy. Simply upload your X-ray file (JPEG, PNG, or DICOM), and results are returned within seconds. <strong class="text-slate-700">Important:</strong> This is a preliminary screening tool and must be confirmed by a licensed radiologist or clinician before any medical decision is made.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="faq-item border border-slate-100 rounded-3xl p-6 cursor-pointer hover:border-blue-200 transition-all" data-cat="ai" onclick="toggleFAQ(this)">
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center gap-3">
+                            <span class="text-[8px] font-black bg-purple-50 text-purple-600 px-2 py-1 rounded-full uppercase tracking-wider">AI</span>
+                            <h5 class="font-black text-slate-800 tracking-tight text-sm lg:text-base">Is my health data private and secure?</h5>
+                        </div>
+                        <i data-lucide="chevron-down" class="faq-icon text-slate-400 flex-shrink-0 ml-4 w-5 h-5"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <div class="mt-4 pt-4 border-t border-slate-100">
+                            <p class="text-slate-500 text-sm leading-relaxed">Yes. All data transmitted through Vital Hub is encrypted with AES-256 at rest and TLS 1.3 in transit. We are HIPAA-compliant and GDPR-aligned. Your health records, scans, and biometric data are never sold to third parties. You retain full ownership and can request complete deletion of your data at any time from your account settings.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="faq-item border border-slate-100 rounded-3xl p-6 cursor-pointer hover:border-blue-200 transition-all" data-cat="ai" onclick="toggleFAQ(this)">
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center gap-3">
+                            <span class="text-[8px] font-black bg-purple-50 text-purple-600 px-2 py-1 rounded-full uppercase tracking-wider">AI</span>
+                            <h5 class="font-black text-slate-800 tracking-tight text-sm lg:text-base">How accurate is the Nutrition AI meal planner?</h5>
+                        </div>
+                        <i data-lucide="chevron-down" class="faq-icon text-slate-400 flex-shrink-0 ml-4 w-5 h-5"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <div class="mt-4 pt-4 border-t border-slate-100">
+                            <p class="text-slate-500 text-sm leading-relaxed">The Nutrition AI uses your BMI, TDEE (Total Daily Energy Expenditure), health goals, medical flags, and even your geographic location to generate region-specific 7-day meal plans. It factors in macronutrient ratios validated against WHO dietary guidelines. The plan is updated each time you submit new biometric data, ensuring it always reflects your current health status.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="faq-item border border-slate-100 rounded-3xl p-6 cursor-pointer hover:border-blue-200 transition-all" data-cat="ai" onclick="toggleFAQ(this)">
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center gap-3">
+                            <span class="text-[8px] font-black bg-purple-50 text-purple-600 px-2 py-1 rounded-full uppercase tracking-wider">AI</span>
+                            <h5 class="font-black text-slate-800 tracking-tight text-sm lg:text-base">Can the AI assistant replace a real doctor?</h5>
+                        </div>
+                        <i data-lucide="chevron-down" class="faq-icon text-slate-400 flex-shrink-0 ml-4 w-5 h-5"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <div class="mt-4 pt-4 border-t border-slate-100">
+                            <p class="text-slate-500 text-sm leading-relaxed">No — and we're transparent about this. Vital Hub's AI tools are designed to empower you with data-driven insights and support informed conversations with your doctor, not to replace clinical judgment. For any symptoms, diagnoses, or treatment decisions, always consult a licensed healthcare professional. Our Tele-Visit feature makes booking a real specialist fast and convenient.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Orders & Shipping FAQs -->
+                <div class="faq-item border border-slate-100 rounded-3xl p-6 cursor-pointer hover:border-blue-200 transition-all" data-cat="orders" onclick="toggleFAQ(this)">
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center gap-3">
+                            <span class="text-[8px] font-black bg-emerald-50 text-emerald-600 px-2 py-1 rounded-full uppercase tracking-wider">Orders</span>
+                            <h5 class="font-black text-slate-800 tracking-tight text-sm lg:text-base">How long does delivery take?</h5>
+                        </div>
+                        <i data-lucide="chevron-down" class="faq-icon text-slate-400 flex-shrink-0 ml-4 w-5 h-5"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <div class="mt-4 pt-4 border-t border-slate-100">
+                            <p class="text-slate-500 text-sm leading-relaxed">Standard delivery within Pakistan takes 3–5 business days. Express delivery (1–2 business days) is available for major cities including Karachi, Lahore, Islamabad, and Rawalpindi. International shipping is available to 40+ countries with estimated delivery of 7–14 business days. All orders include a tracking number sent to your registered email within 24 hours of dispatch.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="faq-item border border-slate-100 rounded-3xl p-6 cursor-pointer hover:border-blue-200 transition-all" data-cat="orders" onclick="toggleFAQ(this)">
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center gap-3">
+                            <span class="text-[8px] font-black bg-emerald-50 text-emerald-600 px-2 py-1 rounded-full uppercase tracking-wider">Orders</span>
+                            <h5 class="font-black text-slate-800 tracking-tight text-sm lg:text-base">What is the return and refund policy?</h5>
+                        </div>
+                        <i data-lucide="chevron-down" class="faq-icon text-slate-400 flex-shrink-0 ml-4 w-5 h-5"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <div class="mt-4 pt-4 border-t border-slate-100">
+                            <p class="text-slate-500 text-sm leading-relaxed">We offer a 30-day hassle-free return policy on all unopened products. For defective items, we provide a free replacement or full refund within 60 days of purchase regardless of packaging. To initiate a return, log in to your account, navigate to Order History, and select "Request Return". Refunds are processed within 5–7 business days to your original payment method.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="faq-item border border-slate-100 rounded-3xl p-6 cursor-pointer hover:border-blue-200 transition-all" data-cat="orders" onclick="toggleFAQ(this)">
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center gap-3">
+                            <span class="text-[8px] font-black bg-emerald-50 text-emerald-600 px-2 py-1 rounded-full uppercase tracking-wider">Orders</span>
+                            <h5 class="font-black text-slate-800 tracking-tight text-sm lg:text-base">Which payment methods are accepted?</h5>
+                        </div>
+                        <i data-lucide="chevron-down" class="faq-icon text-slate-400 flex-shrink-0 ml-4 w-5 h-5"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <div class="mt-4 pt-4 border-t border-slate-100">
+                            <p class="text-slate-500 text-sm leading-relaxed">Vital Hub accepts Visa, Mastercard, JazzCash, EasyPaisa, and bank transfers (HBL, UBL, MCB). Cash on Delivery (COD) is available in selected cities. For international customers, we accept PayPal and major international credit cards. All transactions are SSL-secured and processed through PCI-DSS compliant gateways.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Account FAQs -->
+                <div class="faq-item border border-slate-100 rounded-3xl p-6 cursor-pointer hover:border-blue-200 transition-all" data-cat="account" onclick="toggleFAQ(this)">
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center gap-3">
+                            <span class="text-[8px] font-black bg-rose-50 text-rose-600 px-2 py-1 rounded-full uppercase tracking-wider">Account</span>
+                            <h5 class="font-black text-slate-800 tracking-tight text-sm lg:text-base">How do I book a tele-consultation?</h5>
+                        </div>
+                        <i data-lucide="chevron-down" class="faq-icon text-slate-400 flex-shrink-0 ml-4 w-5 h-5"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <div class="mt-4 pt-4 border-t border-slate-100">
+                            <p class="text-slate-500 text-sm leading-relaxed">Creating an account is free and takes under 2 minutes. Visit the Appointments page, choose your preferred specialist and time slot, then confirm with your registered email. You'll receive a secure video call link 15 minutes before your session. Consultations are available 24/7 across all time zones, with same-day slots often available for urgent queries.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="faq-item border border-slate-100 rounded-3xl p-6 cursor-pointer hover:border-blue-200 transition-all" data-cat="account" onclick="toggleFAQ(this)">
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center gap-3">
+                            <span class="text-[8px] font-black bg-rose-50 text-rose-600 px-2 py-1 rounded-full uppercase tracking-wider">Account</span>
+                            <h5 class="font-black text-slate-800 tracking-tight text-sm lg:text-base">Can I manage multiple family members under one account?</h5>
+                        </div>
+                        <i data-lucide="chevron-down" class="faq-icon text-slate-400 flex-shrink-0 ml-4 w-5 h-5"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <div class="mt-4 pt-4 border-t border-slate-100">
+                            <p class="text-slate-500 text-sm leading-relaxed">Yes. Vital Hub supports Family Profiles — you can add up to 5 family members under a single account, each with their own biometric data, health history, and nutrition plans. Toggle between profiles from the account dashboard. This feature is ideal for managing elderly parents or children's health data alongside your own.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="faq-item border border-slate-100 rounded-3xl p-6 cursor-pointer hover:border-blue-200 transition-all" data-cat="account" onclick="toggleFAQ(this)">
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center gap-3">
+                            <span class="text-[8px] font-black bg-rose-50 text-rose-600 px-2 py-1 rounded-full uppercase tracking-wider">Account</span>
+                            <h5 class="font-black text-slate-800 tracking-tight text-sm lg:text-base">Is there a subscription or membership fee?</h5>
+                        </div>
+                        <i data-lucide="chevron-down" class="faq-icon text-slate-400 flex-shrink-0 ml-4 w-5 h-5"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <div class="mt-4 pt-4 border-t border-slate-100">
+                            <p class="text-slate-500 text-sm leading-relaxed">Vital Hub is free to use for store browsing, AI chat, and basic nutrition plans. The <strong class="text-slate-700">Vital Pro</strong> membership (Rs 999/month) unlocks unlimited AI diagnostics, priority specialist bookings, advanced nutrition tracking, and family profiles. A 14-day free trial is available for new accounts — no credit card required to start.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div><!-- /faq-list -->
+
+            <!-- Still have questions CTA -->
+            <div class="mt-12 text-center bg-slate-50 rounded-3xl p-8 border border-slate-100">
+                <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <i data-lucide="message-circle-question" class="w-6 h-6"></i>
+                </div>
+                <h4 class="font-black text-slate-900 mb-2">Still have questions?</h4>
+                <p class="text-slate-400 text-sm mb-6">Our support team responds within 2 hours.</p>
+                <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                    <button onclick="toggleAIHub()" class="btn-shimmer bg-blue-600 text-white px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-900 transition-all shadow-lg shadow-blue-100">
+                        Ask AI Assistant
+                    </button>
+                    <a href="appointment.html" class="border-2 border-slate-200 text-slate-700 px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:border-blue-300 hover:text-blue-600 transition-all">
+                        Book Consultation
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════ CTA ═══════════ -->
+    <section class="py-12 px-6 lg:px-12 reveal">
+        <div class="max-w-7xl mx-auto bg-blue-600 rounded-[40px] lg:rounded-[60px] p-8 lg:p-16 flex flex-col lg:flex-row items-center justify-between gap-12 overflow-hidden relative">
+            <div class="cta-glow absolute top-0 right-0 w-64 h-64 bg-white rounded-full -mr-32 -mt-32 blur-3xl pointer-events-none"></div>
+            <div class="cta-glow absolute bottom-0 left-0 w-48 h-48 bg-blue-400 rounded-full -ml-24 -mb-24 blur-3xl pointer-events-none" style="animation-delay:2.5s"></div>
+            <div class="relative z-10 space-y-6 lg:max-w-lg text-center lg:text-left">
+                <h2 class="text-4xl lg:text-5xl font-black text-white leading-tight tracking-tighter">Your health in your pocket.</h2>
+                <p class="text-blue-100 text-base lg:text-lg px-4 lg:px-0">Get real-time alerts, sync with local clinics, and track your nutrition on the go.</p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                    <button class="btn-shimmer bg-white text-blue-600 px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-900 hover:text-white transition-all duration-300">App Store</button>
+                    <button class="btn-shimmer bg-blue-700 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-900 transition-all duration-300">Play Store</button>
+                </div>
+            </div>
+            <div class="relative group z-10">
+                <img src="{% static 'frontend/images/logo1.png' %}" alt="App Preview" class="w-48 lg:w-72 drop-shadow-2xl group-hover:-rotate-6 group-hover:scale-105 transition-all duration-500">
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════ STANDARD FOOTER ═══════════ -->
+    <footer class="bg-slate-50 border-t border-slate-100 py-16 lg:py-24 px-6 lg:px-12 reveal">
+        <div class="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-16">
+            <div class="space-y-6">
+                <div class="flex items-center gap-2">
+                    <div class="bg-blue-600 p-2 rounded-xl text-white"><i data-lucide="activity"></i></div>
+                    <span class="text-xl font-black uppercase tracking-tighter text-blue-900">Vital Hub</span>
+                </div>
+                <p class="text-slate-400 text-sm leading-relaxed font-medium">Your all-in-one healthcare portal for monitoring, diagnostics, and wellness.</p>
+                <div class="flex items-center gap-2 bg-white border border-slate-100 rounded-full px-3 py-2 w-fit">
+                    <span class="relative flex h-2 w-2">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                    <span class="text-[10px] font-black uppercase tracking-widest text-emerald-600">Neural Core Online</span>
+                </div>
+                <div class="flex gap-3">
+                    <a href="#" class="w-9 h-9 bg-white border border-slate-200 rounded-xl flex items-center justify-center text-slate-400 hover:text-blue-600 hover:border-blue-200 transition-all"><i data-lucide="twitter" class="w-4 h-4"></i></a>
+                    <a href="#" class="w-9 h-9 bg-white border border-slate-200 rounded-xl flex items-center justify-center text-slate-400 hover:text-blue-600 hover:border-blue-200 transition-all"><i data-lucide="instagram" class="w-4 h-4"></i></a>
+                    <a href="#" class="w-9 h-9 bg-white border border-slate-200 rounded-xl flex items-center justify-center text-slate-400 hover:text-blue-600 hover:border-blue-200 transition-all"><i data-lucide="linkedin" class="w-4 h-4"></i></a>
+                </div>
+            </div>
+            <div>
+                <h4 class="font-black mb-6 text-xs lg:text-sm uppercase tracking-widest text-slate-800">Sitemap</h4>
+                <ul class="text-slate-400 text-sm space-y-4 font-bold">
+                    <li><a href="index.html"      class="footer-link hover:text-blue-600 transition-colors">Home</a></li>
+                    <li><a href="store.html"      class="footer-link hover:text-blue-600 transition-colors">Store</a></li>
+                    <li><a href="nutrition.html"  class="footer-link hover:text-blue-600 transition-colors">Nutrition AI</a></li>
+                    <li><a href="xray.html"       class="footer-link hover:text-blue-600 transition-colors">X-Ray Analysis</a></li>
+                    <li><a href="report-analyzer.html" class="footer-link hover:text-blue-600 transition-colors">Report Analyzer</a></li>
+                    <li><a href="appointment.html" class="footer-link hover:text-blue-600 transition-colors">Book Appointment</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-black mb-6 text-xs lg:text-sm uppercase tracking-widest text-slate-800">Account</h4>
+                <ul class="text-slate-400 text-sm space-y-4 font-bold">
+                    <li><a href="auth.html"      class="footer-link hover:text-blue-600 transition-colors">Patient Login</a></li>
+                    <li><a href="checkout.html"  class="footer-link hover:text-blue-600 transition-colors">View Cart</a></li>
+                    <li><a href="#"              class="footer-link hover:text-blue-600 transition-colors">Privacy Policy</a></li>
+                    <li><a href="#"              class="footer-link hover:text-blue-600 transition-colors">Clinical Partners</a></li>
+                    <li><a href="#"              class="footer-link hover:text-blue-600 transition-colors">Support</a></li>
+                </ul>
+            </div>
+            <div class="bg-white p-8 rounded-[40px] border border-slate-100 shadow-sm hover:shadow-lg transition-shadow duration-300">
+                <h4 class="font-black mb-2 text-slate-900 text-sm">Stay in the loop</h4>
+                <p class="text-[10px] text-slate-400 uppercase font-black tracking-widest mb-4">Health tips, product drops, no spam</p>
+                <form id="newsletter-form" class="space-y-2" onsubmit="return handleNewsletterSubmit(event)">
+                    <input id="newsletter-email" type="email" required placeholder="you@example.com"
+                           class="w-full p-3 bg-slate-50 rounded-xl border-2 border-transparent outline-none focus:border-blue-200 text-xs font-bold transition-all">
+                    <button type="submit" id="newsletter-btn" class="btn-shimmer w-full bg-blue-600 text-white py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-900 transition-all duration-300">
+                        Subscribe
+                    </button>
+                    <p id="newsletter-feedback" class="hidden text-[10px] font-bold text-center pt-1"></p>
+                </form>
+            </div>
+        </div>
+        <div class="max-w-7xl mx-auto mt-12 pt-8 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest">© 2026 Vital Hub Healthcare Systems</p>
+            <div class="flex items-center gap-4">
+                <span class="flex items-center gap-1.5 text-slate-400 text-[10px] font-bold uppercase tracking-widest"><i data-lucide="lock" class="w-3 h-3"></i> Encrypted</span>
+                <span class="flex items-center gap-1.5 text-slate-400 text-[10px] font-bold uppercase tracking-widest"><i data-lucide="shield-check" class="w-3 h-3"></i> HIPAA Compliant</span>
+                <span class="flex items-center gap-1.5 text-slate-400 text-[10px] font-bold uppercase tracking-widest"><i data-lucide="badge-check" class="w-3 h-3"></i> ISO Certified</span>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        async function handleNewsletterSubmit(evt) {
+            evt.preventDefault();
+            const input = document.getElementById('newsletter-email');
+            const btn = document.getElementById('newsletter-btn');
+            const feedback = document.getElementById('newsletter-feedback');
+            const email = input.value.trim();
+
+            feedback.classList.remove('hidden', 'text-emerald-600', 'text-red-500');
+
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                feedback.textContent = 'Please enter a valid email address.';
+                feedback.classList.add('text-red-500');
+                return false;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Subscribing...';
+            try {
+                const res = await fetch('/api/newsletter/subscribe/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                const data = await res.json();
+                feedback.textContent = data.message || (data.success ? 'Subscribed!' : 'Something went wrong.');
+                feedback.classList.add(data.success ? 'text-emerald-600' : 'text-red-500');
+                if (data.success) input.value = '';
+            } catch (err) {
+                feedback.textContent = 'Network error — please try again.';
+                feedback.classList.add('text-red-500');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Subscribe';
+            }
+            return false;
+        }
+    </script>
+
+    <!-- ═══════════ AI WIDGET ═══════════ -->
+    <div id="ai-trigger" class="fixed bottom-8 right-8 z-[100] group">
+        <div class="ai-ring"></div>
+        <button onclick="toggleAIHub()" class="relative bg-blue-600 hover:bg-slate-900 text-white p-5 rounded-3xl shadow-2xl shadow-blue-200 transition-all duration-500 hover:-translate-y-2 flex items-center gap-3">
+            <div class="relative">
+                <i data-lucide="bot" class="w-6 h-6"></i>
+                <span class="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 border-2 border-blue-600 rounded-full animate-pulse"></span>
+            </div>
+            <span class="text-[10px] font-black uppercase tracking-[0.2em] hidden group-hover:block transition-all">Vital Assistant</span>
+        </button>
+    </div>
+
+    <div id="ai-hub" class="fixed bottom-8 right-8 w-full max-w-[400px] h-[650px] bg-white rounded-[45px] shadow-[0_32px_64px_-15px_rgba(0,0,0,0.2)] z-[101] border border-slate-100 flex flex-col overflow-hidden translate-y-[120%] opacity-0 transition-all duration-500 ease-in-out">
+        <div class="bg-slate-900 p-8 text-white relative overflow-hidden flex-shrink-0">
+            <div class="absolute -top-10 -right-10 w-32 h-32 bg-blue-600/20 rounded-full blur-3xl"></div>
+            <div class="absolute -bottom-8 -left-8 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl"></div>
+            <div class="flex justify-between items-start relative z-10">
+                <div>
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                        <p class="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Neural Core v2.0 Online</p>
+                    </div>
+                    <h3 class="text-xl font-black tracking-tighter">Vital Hub AI</h3>
+                    <p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1">Health Assistant</p>
+                </div>
+                <button onclick="toggleAIHub()" class="bg-white/10 p-2.5 rounded-xl hover:bg-white/20 transition-all hover:rotate-90 duration-300">
+                    <i data-lucide="x" size="16"></i>
+                </button>
+            </div>
+            <!-- Quick suggestion chips -->
+            <div class="flex gap-2 mt-5 flex-wrap relative z-10">
+                <button onclick="askQuick('Smart Ring')" class="px-3 py-1.5 bg-white/10 hover:bg-blue-600 text-white text-[9px] font-black uppercase tracking-wider rounded-full transition-all border border-white/10 hover:border-blue-600">Smart Ring</button>
+                <button onclick="askQuick('BP Monitor')" class="px-3 py-1.5 bg-white/10 hover:bg-blue-600 text-white text-[9px] font-black uppercase tracking-wider rounded-full transition-all border border-white/10 hover:border-blue-600">BP Monitor</button>
+                <button onclick="askQuick('book appointment')" class="px-3 py-1.5 bg-white/10 hover:bg-blue-600 text-white text-[9px] font-black uppercase tracking-wider rounded-full transition-all border border-white/10 hover:border-blue-600">Appointments</button>
+            </div>
+        </div>
+
+        <div id="ai-content" class="flex-grow p-5 overflow-y-auto space-y-4 bg-slate-50/50" style="scrollbar-width:thin; scrollbar-color:#e2e8f0 transparent;">
+            <div class="flex gap-3">
+                <div class="w-8 h-8 bg-blue-600 text-white rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-blue-200">
+                    <i data-lucide="sparkles" size="14"></i>
+                </div>
+                <div class="bg-white p-4 rounded-2xl rounded-tl-none border border-slate-100 shadow-sm max-w-[85%]">
+                    <p class="text-xs font-bold text-slate-700 leading-relaxed">Hello! I'm your Vital Hub AI assistant. Ask me about products like <span class="text-blue-600">"Smart Ring"</span>, services like <span class="text-blue-600">"X-Ray"</span>, or tap a suggestion above!</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-4 bg-white border-t border-slate-100 flex-shrink-0">
+            <div class="relative">
+                <input type="text" id="ai-input" onkeypress="if(event.key==='Enter') processAIQuery()"
+                    placeholder="Ask about health tech..."
+                    class="w-full p-4 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-blue-100 focus:bg-white outline-none transition-all text-xs font-bold text-slate-700 pr-14">
+                <button onclick="processAIQuery()" class="absolute right-2 top-2 bottom-2 px-4 bg-blue-600 text-white rounded-xl hover:bg-slate-900 transition-all flex items-center justify-center shadow-md">
+                    <i data-lucide="send" size="15"></i>
+                </button>
+            </div>
+            <p class="text-center text-[8px] text-slate-300 font-bold uppercase tracking-widest mt-3">AI Medical Support • Vital Hub Labs</p>
+        </div>
+    </div>
+
+    <script src="{% static 'frontend/JS/api.js' %}"></script>
+    <script src="{% static 'frontend/JS/products.js' %}"></script>
+    <script src="{% static 'frontend/JS/script.js' %}"></script>
+    <script src="{% static 'frontend/JS/ai-assistant.js' %}"></script>
+    <script src="{% static 'frontend/JS/animations.js' %}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.lucide) lucide.createIcons();
+        });
+
+        // Mobile nav toggle
+        function toggleMobileNav() {
+            const nav = document.getElementById('mobile-nav');
+            nav.classList.toggle('hidden');
+            nav.classList.toggle('flex');
+            if (window.lucide) lucide.createIcons();
+        }
+
+        // Quick AI suggestions
+        function askQuick(text) {
+            const input = document.getElementById('ai-input');
+            input.value = text;
+            processAIQuery();
+        }
+
+        // Header scroll shadow (Specific to index.html structure if any difference, else handled by animations.js)
+        // Note: animations.js already handles header scrolled state.
+
+
+        // FAQ logic — only one open at a time, with category filter
+        function toggleFAQ(item) {
+            const isActive = item.classList.contains('active');
+            document.querySelectorAll('.faq-item.active').forEach(i => i.classList.remove('active'));
+            if (!isActive) item.classList.add('active');
+        }
+
+        function filterFAQ(cat, btn) {
+            // Update button states
+            document.querySelectorAll('.faq-tag').forEach(b => b.classList.remove('active-tag', 'bg-blue-600', 'text-white'));
+            btn.classList.add('active-tag', 'bg-blue-600', 'text-white');
+            // Show/hide items
+            document.querySelectorAll('.faq-item').forEach(item => {
+                const match = cat === 'all' || item.dataset.cat === cat;
+                item.style.display = match ? '' : 'none';
+                if (!match) item.classList.remove('active');
+            });
+        }
+
+        // Cart badge
+        const cartBadge = document.getElementById('cart-count');
+        if (cartBadge) {
+            const badgeObserver = new MutationObserver(() => {
+                cartBadge.classList.remove('badge-pop');
+                void cartBadge.offsetWidth;
+                cartBadge.classList.add('badge-pop');
+            });
+            badgeObserver.observe(cartBadge, { childList: true, characterData: true, subtree: true });
+        }
+
+        // Ripple on buttons
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('button');
+            if (!btn) return;
+            const rect = btn.getBoundingClientRect();
+            const ripple = document.createElement('span');
+            const size = Math.max(rect.width, rect.height);
+            ripple.style.cssText = `position:absolute;border-radius:50%;background:rgba(255,255,255,0.25);width:${size}px;height:${size}px;left:${e.clientX-rect.left-size/2}px;top:${e.clientY-rect.top-size/2}px;transform:scale(0);animation:rippleAnim 0.5s ease-out forwards;pointer-events:none;z-index:99;`;
+            if (getComputedStyle(btn).position === 'static') btn.style.position = 'relative';
+            btn.style.overflow = 'hidden';
+            btn.appendChild(ripple);
+            setTimeout(() => ripple.remove(), 600);
+        });
+        if (!document.getElementById('ripple-style')) {
+            const s = document.createElement('style');
+            s.id = 'ripple-style';
+            s.textContent = '@keyframes rippleAnim{to{transform:scale(2.5);opacity:0}}';
+            document.head.appendChild(s);
+        }
+    </script>
+</body>
+</html>

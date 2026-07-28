@@ -1,0 +1,195 @@
+from django.core.management.base import BaseCommand
+from products.models import Product
+
+PRODUCTS = [
+    # --- MONITORING ---
+    dict(id="wrist-bp-monitor", name="Bluetooth Wrist BP Monitor", price=11999, category="Monitoring",
+         description="A wearable blood pressure monitor for convenient and accurate daily BP tracking at home.",
+         features=["Wrist-based measurement", "Bluetooth connectivity", "Digital display", "Portable design"],
+         img="images/bp-moniter-main.avif",
+         images=["images/bp-moniter-main.avif"],
+         has_model=True, model_file="models/bp-monitor.glb", has_video=False, video_file=""),
+
+    dict(id="glucometer", name="Glucometer GL 44 Black mg/d", price=7499, category="Monitoring",
+         description="A digital glucometer designed for fast, reliable, and accurate blood sugar monitoring.",
+         features=["Precise readings", "Easy-to-read display", "Simple operation", "Compact size"],
+         img="images/glucose-meter-main.avif",
+         images=["images/glucose-meter-main.avif", "images/glucose-meter-2.avif", "images/glucose-meter-3.avif", "images/glucose-meter-4.avif"],
+         has_model=True, model_file="models/glucose-meter.glb", has_video=False, video_file=""),
+
+    dict(id="thermometer", name="Digital Thermometer (Non-Contact)", price=4500, category="Monitoring",
+         description="A touch-free infrared thermometer for fast, accurate, and hygienic temperature readings.",
+         features=["Non-contact measurement", "Quick results", "Clear digital display"],
+         img="images/thermometer-home.avif",
+         images=["images/thermometer-home.avif"],
+         has_model=False, model_file="", has_video=True, video_file="videos/thermometer.mp4"),
+
+    # --- WELLNESS ---
+    dict(id="glass-scale", name="Glass Weighing Scale", price=3499, category="Wellness",
+         description="A modern glass weighing scale for accurate and consistent body weight measurement.",
+         features=["Tempered glass surface", "High-precision sensors", "Slim design", "Digital display"],
+         img="images/weighting-scale-main.avif",
+         images=["images/weighting-scale-main.avif", "images/weighting-scale-2.avif", "images/weighting-scale-3.avif"],
+         has_model=True, model_file="models/weighing-scale.glb", has_video=False, video_file=""),
+
+    dict(id="purifier-necklace", name="Portable Air Purifier Necklace", price=1499, category="Wellness",
+         description="A wearable air purifier that helps provide cleaner air during daily activities.",
+         features=["Lightweight necklace design", "Air filtration support", "USB rechargeable"],
+         img="images/necklace-main.avif",
+         images=["images/necklace-main.avif", "images/necklace-2.avif", "images/necklace-3.avif"],
+         has_model=True, model_file="models/necklace-model.glb", has_video=True, video_file="videos/necklace.mp4"),
+
+    dict(id="sleep-mask", name="Wireless Sleep Mask", price=6399, category="Wellness",
+         description="A soft sleep mask with wireless audio to support relaxation and quality sleep.",
+         features=["Built-in speakers", "Light-blocking design", "Breathable fabric", "Rechargeable battery"],
+         img="images/eyemask-main.avif",
+         images=["images/eyemask-main.avif", "images/eyemask-2.avif", "images/eyemask-3.avif"],
+         has_model=True, model_file="models/eyemask.glb", has_video=True, video_file="videos/sleep-mask.mp4"),
+
+    dict(id="eye-spray", name="Eye Moisturising Spray", price=2499, category="Wellness",
+         description="A refreshing eye spray that relieves dryness and soothes tired eyes instantly.",
+         features=["Instant hydration", "Easy spray application", "Safe for daily use"],
+         img="images/eyecare-device-main.avif",
+         images=["images/eyecare-device-main.avif", "images/eyecare-device-2.avif", "images/eyecare-device-3.avif"],
+         has_model=True, model_file="models/eyecare-device.glb", has_video=True, video_file="videos/eyedevice.mp4"),
+
+    dict(id="hearing-amplifiers", name="Hearing Amplifiers", price=10999, category="Wellness",
+         description="Compact hearing amplifiers that enhance sound clarity for everyday listening.",
+         features=["Adjustable volume", "Clear sound amplification", "Lightweight", "Comfortable fit"],
+         img="images/hearing-aid-main.avif",
+         images=["images/hearing-aid-main.avif", "images/hearing-aid-2.avif", "images/hearing-aid-3.avif"],
+         has_model=True, model_file="models/hearing-aid.glb", has_video=True, video_file="videos/hearing-aid.mp4"),
+
+    dict(id="uv-water-bottle", name="Smart Self-Cleaning Water Bottle", price=18999, category="Wellness",
+         description="A smart UV-powered water bottle that keeps drinking water clean and fresh.",
+         features=["UV self-cleaning technology", "Long battery life", "Durable body"],
+         img="images/water-bottle-main.avif",
+         images=["images/water-bottle-main.avif", "images/water-bottle-2.avif", "images/water-bottle-3.avif",
+                 "images/water-bottle-4.avif", "images/water-bottle-5.avif", "images/water-bottle-6.avif"],
+         has_model=True, model_file="models/bottle.glb", has_video=True, video_file="videos/bottle.mp4"),
+
+    # --- WEARABLES ---
+    dict(id="smart-ring", name="TK9 Smart Ring", price=13999, category="Wearables",
+         description="A smart wearable ring that discreetly tracks health and daily activity data.",
+         features=["Lightweight design", "Activity tracking", "Long battery life", "Titanium shell"],
+         img="images/smartring-main.avif",
+         images=["images/smartring-main.avif", "images/smartring-2.avif", "images/smartring-3.avif", "images/smartring-4.avif"],
+         has_model=True, model_file="models/smartring.glb", has_video=True, video_file="videos/smartring.mp4"),
+
+    dict(id="fitness-band", name="LIGE Fitness Band", price=10999, category="Wearables",
+         description="A fitness band designed to track daily activities and essential health metrics.",
+         features=["Step tracking", "Health monitoring", "Comfortable strap", "Rechargeable battery"],
+         img="images/fitness-band-main.avif",
+         images=["images/fitness-band-main.avif", "images/fitness-band-2.avif", "images/fitness-band-3.avif", "images/fitness-band-4.avif"],
+         has_model=True, model_file="models/fitness-band.glb", has_video=True, video_file="videos/smart-watch.mp4"),
+
+    # --- RELAXATION ---
+    dict(id="octopus-claw", name="Electric Octopus Claw", price=5499, category="Relaxation",
+         description="A handheld electric massager designed to relieve muscle stress and improve relaxation.",
+         features=["Multiple massage nodes", "Ergonomic grip", "Portable", "Easy operation"],
+         img="images/octopus-massager-main.avif",
+         images=["images/octopus-massager-main.avif", "images/octopus-massager-2.avif", "images/octopus-massager-3.avif"],
+         has_model=True, model_file="models/octopus-massager.glb", has_video=True, video_file="videos/octopus-massager.mp4"),
+
+    dict(id="full-body-massage-pad", name="Full Body Massage Pad", price=19999, category="Relaxation",
+         description="A full-length massage pad that provides soothing vibrations for total body relaxation.",
+         features=["Multiple vibration modes", "Full-body coverage", "Soft padding", "Remote control"],
+         img="images/massage-pad-main.avif",
+         images=["images/massage-pad-main.avif", "images/massage-pad-2.avif"],
+         has_model=True, model_file="models/massage-chair.glb", has_video=True, video_file="videos/back-massager.mp4"),
+
+    # --- PAIN RELIEF ---
+    dict(id="heating-belt", name="Heating Belt for the Back", price=14999, category="Pain Relief",
+         description="An electric heating belt that helps reduce back pain and muscle stiffness.",
+         features=["Adjustable heat levels", "Soft fabric", "Digital temperature display"],
+         img="images/heating-belt-main.avif",
+         images=["images/heating-belt-main.avif", "images/heating-belt-2.avif", "images/heating-belt-3.avif",
+                 "images/heating-belt-4.avif", "images/heating-belt-5.avif"],
+         has_model=False, model_file="", has_video=False, video_file=""),
+
+    dict(id="massage-pad-portable", name="Electronic Massage Pad", price=2999, category="Pain Relief",
+         description="A portable massage pad for targeted muscle relaxation and comfort.",
+         features=["Vibration therapy", "Lightweight design", "Easy controls"],
+         img="images/massage-pad-main.avif",
+         images=["images/massage-pad-main.avif", "images/massage-pad-2.avif"],
+         has_model=False, model_file="", has_video=True, video_file="videos/massage-pad.mp4"),
+
+    dict(id="knee-massager", name="Portable Knee Massager", price=9999, category="Pain Relief",
+         description="A wearable knee massager that delivers heat and vibration therapy for joint relief.",
+         features=["Heat function", "Multiple massage modes", "Adjustable straps"],
+         img="images/knee-massager-main.avif",
+         images=["images/knee-massager-main.avif", "images/knee-massager-2.avif", "images/knee-massager-3.avif", "images/knee-massager-4.avif"],
+         has_model=False, model_file="", has_video=True, video_file="videos/knee-massager.mp4"),
+
+    # --- FITNESS ---
+    dict(id="elliptical", name="Under Desk Elliptical Machine", price=75499, category="Fitness",
+         description="A low-impact elliptical machine designed for leg exercise while seated.",
+         features=["Quiet operation", "Compact design", "Adjustable resistance", "Improves circulation"],
+         img="images/elliptical-machine-main.avif",
+         images=["images/elliptical-machine-main.avif", "images/elliptical-machine-2.avif",
+                 "images/elliptical-machine-3.avif", "images/elliptical-machine-4.avif"],
+         has_model=True, model_file="models/elliptical-machine.glb", has_video=True, video_file="videos/elliptical-machine.mp4"),
+
+    # --- NUTRITION ---
+    dict(id="calorie-counter", name="Calorie Counter", price=14999, category="Nutrition",
+         description="A digital calorie counter that helps monitor daily intake for a healthier lifestyle.",
+         features=["Easy digital interface", "Calorie tracking support", "Portable design"],
+         img="images/calorie-counter-main.avif",
+         images=["images/calorie-counter-main.avif", "images/calorie-counter-2.avif", "images/calorie-counter-3.avif"],
+         has_model=True, model_file="models/calorie-counter.glb", has_video=False, video_file=""),
+
+    # --- DENTAL ---
+    dict(id="water-flosser", name="Water Flosser", price=5999, category="Dental",
+         description="A dental water flosser that improves oral hygiene by gently cleaning between teeth.",
+         features=["High-pressure water stream", "Gentle on gums", "Removes food residue"],
+         img="images/water-flosser-main.avif",
+         images=["images/water-flosser-main.avif", "images/water-flosser-2.avif",
+                 "images/water-flosser-3.avif", "images/water-flosser-4.avif"],
+         has_model=False, model_file="", has_video=False, video_file=""),
+
+    dict(id="smart-toothbrush", name="Smart Timer Electric Brush", price=2299, category="Dental",
+         description="A rechargeable electric toothbrush with smart timing for effective daily cleaning.",
+         features=["Built-in timer", "Multiple brush heads", "Rechargeable battery"],
+         img="images/toothbrush-main.avif",
+         images=["images/toothbrush-main.avif", "images/toothbrush-2.avif", "images/toothbrush-3.avif"],
+         has_model=True, model_file="models/toothbrush.glb", has_video=True, video_file="videos/toothbrush.mp4"),
+
+    # --- SAFETY ---
+    dict(id="anti-choking", name="Anti-Choking Suction Device", price=5299, category="Safety",
+         description="An emergency safety device designed to quickly clear airway blockages.",
+         features=["Manual suction system", "Easy to use", "Suitable for adults and children"],
+         img="images/suctiondevice-main.avif",
+         images=["images/suctiondevice-main.avif", "images/suctiondevice-2.avif", "images/suctiondevice-3.avif",
+                 "images/suctiondevice-4.avif", "images/suctiondevice-5.avif", "images/suctiondevice-6.avif"],
+         has_model=True, model_file="models/suction-device.glb", has_video=False, video_file=""),
+
+    # --- MOBILITY ---
+    dict(id="foldable-cane", name="Foldable 4-Legged Cane", price=5999, category="Mobility",
+         description="A stable walking cane designed to offer better balance and reliable support.",
+         features=["Four-leg base", "Foldable design", "Height adjustable", "Anti-slip feet"],
+         img="images/legged-cane-main.avif",
+         images=["images/legged-cane-main.avif", "images/legged-cane-2.avif", "images/legged-cane-3.avif",
+                 "images/legged-cane-4.avif", "images/legged-cane-5.avif"],
+         has_model=False, model_file="", has_video=True, video_file="videos/cane.mp4"),
+]
+
+
+class Command(BaseCommand):
+    help = 'Load all products into the database (skips existing IDs)'
+
+    def handle(self, *args, **options):
+        created = 0
+        skipped = 0
+        for data in PRODUCTS:
+            _, was_created = Product.objects.get_or_create(
+                id=data['id'],
+                defaults={k: v for k, v in data.items() if k != 'id'},
+            )
+            if was_created:
+                created += 1
+            else:
+                skipped += 1
+
+        self.stdout.write(self.style.SUCCESS(
+            f'Done — {created} created, {skipped} already existed.'
+        ))

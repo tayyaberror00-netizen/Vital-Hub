@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="static-prefix" content="{% static 'frontend/' %}">
+    <title>Vital Hub | AI Nutrition Architect</title>
+    <!-- Fonts -->
+    <!-- Component Scripts -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="{% static 'frontend/CSS/style.css' %}">
+    
+    <style>
+        :root { --green: #1a7a4a; --green-light: #22c55e; --green-pale: #dcfce7; --accent: #f0a500; }
+                
+        .field-label { display: block; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: #64748b; margin-bottom: 8px; }
+
+        .vh-input { width: 100%; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 14px 16px; font-size: 13px; font-weight: 600; color: #1e293b; outline: none; transition: all 0.2s ease; }
+        .vh-input:focus { border-color: #22c55e; background: white; box-shadow: 0 0 0 3px rgba(34,197,94,0.1); }
+
+        .check-label { display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 14px; cursor: pointer; transition: all 0.2s; }
+        .check-label:hover { border-color: #22c55e; background: #f0fdf4; }
+        .check-label:has(input:checked) { border-color: #22c55e; background: #ecfdf5; }
+        .check-label input { accent-color: #22c55e; width: 15px; height: 15px; }
+
+        .halal-wrap { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; background: linear-gradient(135deg, #f0fdf4, #ecfdf5); border: 1.5px solid #bbf7d0; border-radius: 14px; cursor: pointer; transition: all 0.2s; }
+        .toggle-sw { width: 44px; height: 24px; background: #d1d5db; border-radius: 12px; position: relative; transition: background 0.3s; flex-shrink: 0; }
+        .toggle-sw.on { background: #22c55e; }
+        .toggle-knob { position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: white; border-radius: 50%; transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1); box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
+        .toggle-sw.on .toggle-knob { transform: translateX(20px); }
+
+        .ms-trigger { width: 100%; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 12px 16px; font-size: 12px; font-weight: 600; color: #475569; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: all 0.2s; }
+        .ms-trigger.open { border-color: #22c55e; background: white; border-radius: 14px 14px 0 0; }
+        .ms-dropdown { display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1.5px solid #22c55e; border-top: none; border-radius: 0 0 14px 14px; z-index: 50; max-height: 260px; overflow-y: auto; box-shadow: 0 12px 40px rgba(0,0,0,0.1); }
+        .ms-dropdown.open { display: block; }
+        .ms-opt { display: flex; align-items: center; gap: 10px; padding: 11px 16px; font-size: 12px; font-weight: 600; color: #475569; cursor: pointer; transition: background 0.15s; }
+        .ms-opt:hover { background: #f0fdf4; color: #059669; }
+        .ms-opt.sel { background: #ecfdf5; color: #059669; }
+        .ms-chk { width: 16px; height: 16px; border-radius: 5px; border: 2px solid #cbd5e1; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+        .ms-opt.sel .ms-chk { background: #22c55e; border-color: #22c55e; }
+        .ms-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+        .ms-chip { display: flex; align-items: center; gap: 5px; background: #ecfdf5; color: #059669; border: 1px solid #86efac; border-radius: 8px; padding: 4px 10px; font-size: 11px; font-weight: 700; }
+
+        .gen-btn { width: 100%; padding: 18px; background: linear-gradient(135deg, #059669, #22c55e); color: white; font-size: 13px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; border: none; border-radius: 18px; cursor: pointer; box-shadow: 0 8px 30px rgba(34,197,94,0.4); transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1); display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .gen-btn:hover { transform: translateY(-2px); box-shadow: 0 14px 40px rgba(34,197,94,0.5); }
+        .gen-btn:active { transform: scale(0.98); }
+        .gen-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+        .results-panel { background: #0f172a; border-radius: 32px; border: 1px solid rgba(34,197,94,0.15); box-shadow: 0 30px 80px rgba(0,0,0,0.3); overflow: hidden; }
+        .stat-pill { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); border-radius: 16px; padding: 16px; transition: all 0.3s; }
+        .stat-pill:hover { border-color: rgba(34,197,94,0.3); background: rgba(34,197,94,0.05); }
+
+        .week-tabs { display: flex; gap: 4px; padding: 6px; background: rgba(255,255,255,0.04); border-radius: 14px; }
+        .week-tab { flex: 1; padding: 10px 6px; border: none; cursor: pointer; border-radius: 10px; font-size: 10px; font-weight: 700; text-transform: uppercase; color: #64748b; background: transparent; transition: all 0.25s; }
+        .week-tab.active { background: #22c55e; color: white; box-shadow: 0 4px 12px rgba(34,197,94,0.4); }
+
+        .meal-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); border-radius: 16px; padding: 16px; transition: all 0.3s; }
+        .meal-card:hover { border-color: rgba(34,197,94,0.3); background: rgba(34,197,94,0.05); }
+
+        .macro-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+        .macro-label { font-size: 11px; font-weight: 600; color: #94a3b8; width: 70px; flex-shrink: 0; }
+        .macro-track { flex: 1; height: 6px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden; }
+        .macro-fill { height: 100%; border-radius: 3px; transition: width 1.2s cubic-bezier(0.22,1,0.36,1); }
+        .macro-val { font-size: 11px; font-weight: 700; color: #e2e8f0; width: 40px; text-align: right; flex-shrink: 0; }
+
+        .loading-ring { width: 56px; height: 56px; border-radius: 50%; border: 3px solid rgba(34,197,94,0.12); border-top-color: #22c55e; animation: spin 0.75s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .standby-card { background: white; border-radius: 32px; border: 1px solid #e2e8f0; min-height: 480px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
+        .section-tag { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px; font-size: 9px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 14px; }
+        .gadget-rec { background: linear-gradient(135deg, rgba(59,130,246,0.08), rgba(34,197,94,0.06)); border: 1px solid rgba(59,130,246,0.2); border-radius: 20px; padding: 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+
+        /* Custom Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(156, 163, 175, 0.3); border-radius: 10px; }
+        ::-webkit-scrollbar { width: 5px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+    </style>
+</head>
+<body class="bg-slate-50 font-sans text-slate-900">
+
+    <div id="progress-bar"></div>
+
+    <!-- ═══════════ STANDARD HEADER ═══════════ -->
+    <header class="site-header flex justify-between items-center px-6 lg:px-12 py-4 lg:py-6 bg-white/95 backdrop-blur-sm sticky top-0 z-50 border-b border-slate-100">
+        <div class="flex items-center gap-2 cursor-pointer" onclick="window.location.href='index.html'">
+            <div class="bg-blue-600 p-1.5 lg:p-2 rounded-xl text-white shadow-lg shadow-blue-100">
+                <i data-lucide="activity" class="w-5 h-5"></i>
+            </div>
+            <span class="text-xl lg:text-2xl font-black tracking-tighter text-blue-900 uppercase">Vital Hub</span>
+        </div>
+        <nav class="hidden lg:flex gap-10 text-[10px] font-black uppercase tracking-widest text-slate-400">
+            <a href="index.html" class="nav-link hover:text-blue-600 transition">Home</a>
+            <a href="store.html" class="nav-link hover:text-blue-600 transition">Store</a>
+            <a href="nutrition.html" class="nav-link text-blue-600">Nutrition AI</a>
+            <a href="xray.html" class="nav-link hover:text-blue-600 transition">X-Ray</a>
+            <a href="report-analyzer.html" class="nav-link hover:text-blue-600 transition">Report Analyzer</a>
+            <a href="appointment.html" class="nav-link hover:text-blue-600 transition">Appointments</a>
+        </nav>
+        <div class="flex items-center gap-4 lg:gap-6">
+            <a href="checkout.html" class="relative group">
+                <i data-lucide="shopping-cart" class="text-slate-400 group-hover:text-blue-600 transition w-5 h-5"></i>
+                <span id="cart-count" class="absolute -top-2 -right-2 bg-blue-600 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold" style="display:none;">0</span>
+            </a>
+            <button onclick="window.location.href='auth.html'" id="join-now-btn" class="hidden sm:block bg-blue-600 text-white px-5 lg:px-8 py-2.5 lg:py-3 rounded-full font-bold text-[10px] shadow-xl shadow-blue-100 hover:bg-slate-900 transition-all duration-300 tracking-wider">
+                JOIN NOW
+            </button>
+            <button class="lg:hidden p-2 text-slate-400 hover:text-blue-600 transition" onclick="toggleMobileNav()">
+                <i data-lucide="menu" class="w-5 h-5"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Mobile Nav -->
+    <div id="mobile-nav" class="hidden fixed inset-0 bg-white z-[200] flex flex-col items-center justify-center gap-8">
+        <button onclick="toggleMobileNav()" class="absolute top-6 right-6 p-2 text-slate-400 hover:text-slate-900 transition"><i data-lucide="x" class="w-6 h-6"></i></button>
+        <div class="flex items-center gap-2 mb-4"><div class="bg-blue-600 p-2 rounded-xl text-white"><i data-lucide="activity"></i></div><span class="text-2xl font-black tracking-tighter text-blue-900 uppercase">Vital Hub</span></div>
+        <a href="index.html" class="text-2xl font-black uppercase tracking-widest text-slate-900 hover:text-blue-600 transition">Home</a>
+        <a href="store.html" class="text-2xl font-black uppercase tracking-widest text-slate-900 hover:text-blue-600 transition">Store</a>
+        <a href="nutrition.html" class="text-2xl font-black uppercase tracking-widest text-blue-600">Nutrition AI</a>
+        <a href="xray.html" class="text-2xl font-black uppercase tracking-widest text-slate-900 hover:text-blue-600 transition">X-Ray</a>
+        <a href="report-analyzer.html" class="text-2xl font-black uppercase tracking-widest text-slate-900 hover:text-blue-600 transition">Report Analyzer</a>
+        <a href="appointment.html" class="text-2xl font-black uppercase tracking-widest text-slate-900 hover:text-blue-600 transition">Appointments</a>
+        <a href="auth.html" id="mobile-join-now-link" class="mt-4 bg-blue-600 text-white px-10 py-4 rounded-full text-sm font-black uppercase tracking-widest hover:bg-slate-900 transition">Join Now</a>
+    </div>
+
+    <!-- ═══ HERO ═══ -->
+    <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 py-14 lg:py-20 text-center text-white">
+        <div class="inline-flex items-center gap-2 mb-5 px-4 py-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 text-emerald-400 text-xs font-bold uppercase tracking-widest">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse inline-block"></span>
+            <span id="user-location">Pakistan</span>
+        </div>
+        <h1 class="text-4xl lg:text-6xl font-black tracking-tight mb-4">AI Nutrition<br><span class="text-emerald-400">Architect</span></h1>
+        <p class="text-slate-400 text-sm max-w-lg mx-auto leading-relaxed px-4">Clinically-precise, Gemini-powered nutrition plans — uniquely crafted for your health profile, goals & local food culture.</p>
+        <div class="flex justify-center gap-8 mt-8 reveal-stagger">
+            <div class="text-center"><p class="text-2xl font-black text-emerald-400">7</p><p class="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Unique Days</p></div>
+            <div class="w-px bg-slate-700"></div>
+            <div class="text-center"><p class="text-2xl font-black text-amber-400">3</p><p class="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Meals/Day</p></div>
+            <div class="w-px bg-slate-700"></div>
+            <div class="text-center"><p class="text-2xl font-black text-orange-400">AI</p><p class="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Gemini Powered</p></div>
+        </div>
+    </div>
+
+    <main class="max-w-7xl mx-auto px-4 lg:px-8 py-10 lg:py-14">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+
+            <!-- ════ LEFT: FORM ════ -->
+            <div class="lg:col-span-5 reveal-left">
+                <div class="bg-white rounded-[32px] border border-slate-100 shadow-sm p-7 space-y-5">
+                    <div>
+                        <h2 class="text-lg font-black text-slate-900 uppercase tracking-tight">Build Your Profile</h2>
+                        <p class="text-[11px] text-slate-400 font-medium mt-1">Every field improves your plan's precision</p>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div><label class="field-label">Weight (kg)</label><input type="number" id="input-weight" value="70" class="vh-input" min="30" max="250"></div>
+                        <div><label class="field-label">Age (Years)</label><input type="number" id="input-age" value="25" class="vh-input" min="10" max="100"></div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div><label class="field-label">Height (cm)</label><input type="number" id="input-height" value="170" class="vh-input" min="100" max="250"></div>
+                        <div><label class="field-label">Gender</label><select id="select-gender" class="vh-input"><option value="male">Male</option><option value="female">Female</option></select></div>
+                    </div>
+
+                    <div><label class="field-label">Primary Goal</label>
+                        <select id="select-goal" class="vh-input">
+                            <option value="lean_bulk">💪 Lean Muscle Development</option>
+                            <option value="fat_loss" selected>🔥 Fat Loss & Conditioning</option>
+                            <option value="general_wellness">🌿 General Wellness & Energy</option>
+                            <option value="athletic_performance">⚡ Athletic Performance</option>
+                        </select>
+                    </div>
+
+                    <div><label class="field-label">Daily Activity Level</label>
+                        <select id="select-activity" class="vh-input">
+                            <option value="sedentary">🪑 Sedentary (Desk Job)</option>
+                            <option value="light">🚶 Lightly Active (1–3 Days/Week)</option>
+                            <option value="moderate" selected>🏃 Moderately Active (3–5 Days/Week)</option>
+                            <option value="intense">🏋️ Highly Athletic (6–7 Days/Week)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="field-label">Diagnosed Conditions</label>
+                        <div class="grid grid-cols-2 gap-2 mb-3">
+                            <label class="check-label"><input type="checkbox" name="disease" value="hypertension"><span class="text-xs font-bold text-slate-600">Hypertension</span></label>
+                            <label class="check-label"><input type="checkbox" name="disease" value="diabetes"><span class="text-xs font-bold text-slate-600">Diabetes</span></label>
+                            <label class="check-label"><input type="checkbox" name="disease" value="high cholesterol"><span class="text-xs font-bold text-slate-600">High Cholesterol</span></label>
+                            <label class="check-label"><input type="checkbox" name="disease" value="heart disease"><span class="text-xs font-bold text-slate-600">Heart Disease</span></label>
+                            <label class="check-label"><input type="checkbox" name="disease" value="PCOS"><span class="text-xs font-bold text-slate-600">PCOS</span></label>
+                            <label class="check-label"><input type="checkbox" name="disease" value="thyroid"><span class="text-xs font-bold text-slate-600">Thyroid</span></label>
+                        </div>
+                        <textarea id="input-other-diseases" placeholder="Other conditions (e.g. gastritis, kidney issues, gout)…" rows="2" class="vh-input resize-none"></textarea>
+                    </div>
+
+                    <div>
+                        <label class="field-label">Dietary Compliance</label>
+                        <div class="halal-wrap" onclick="toggleHalal()">
+                            <div class="flex items-center gap-3">
+                                <span class="text-2xl">🕌</span>
+                                <div><p class="text-xs font-black text-emerald-800">Halal Foods Only</p><p class="text-[10px] text-emerald-600 font-medium">All meals will be 100% Halal compliant</p></div>
+                            </div>
+                            <div class="toggle-sw" id="halal-switch"><div class="toggle-knob"></div></div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="field-label">Diet Exclusions <span class="text-emerald-500">(Select all that apply)</span></label>
+                        <div class="relative ms-wrapper">
+                            <div class="ms-trigger" id="ms-trigger" onclick="toggleDropdown()">
+                                <span id="ms-placeholder">Select exclusions…</span>
+                                <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform" id="ms-chevron"></i>
+                            </div>
+                            <div class="ms-dropdown custom-scrollbar" id="ms-dropdown">
+                                <div class="ms-opt" data-value="vegetarian" onclick="toggleOption(this)"><div class="ms-chk"><svg width="10" height="8"><path d="M1 4l3 3 5-6" stroke="white" stroke-width="1.5" fill="none"/></svg></div>🥦 Vegetarian</div>
+                                <div class="ms-opt" data-value="vegan" onclick="toggleOption(this)"><div class="ms-chk"><svg width="10" height="8"><path d="M1 4l3 3 5-6" stroke="white" stroke-width="1.5" fill="none"/></svg></div>🌱 Vegan</div>
+                                <div class="ms-opt" data-value="dairy_free" onclick="toggleOption(this)"><div class="ms-chk"><svg width="10" height="8"><path d="M1 4l3 3 5-6" stroke="white" stroke-width="1.5" fill="none"/></svg></div>🥛 Dairy Free</div>
+                                <div class="ms-opt" data-value="gluten_free" onclick="toggleOption(this)"><div class="ms-chk"><svg width="10" height="8"><path d="M1 4l3 3 5-6" stroke="white" stroke-width="1.5" fill="none"/></svg></div>🌾 Gluten Free</div>
+                                <div class="ms-opt" data-value="keto" onclick="toggleOption(this)"><div class="ms-chk"><svg width="10" height="8"><path d="M1 4l3 3 5-6" stroke="white" stroke-width="1.5" fill="none"/></svg></div>🥑 Ketogenic</div>
+                                <div class="ms-opt" data-value="nut_free" onclick="toggleOption(this)"><div class="ms-chk"><svg width="10" height="8"><path d="M1 4l3 3 5-6" stroke="white" stroke-width="1.5" fill="none"/></svg></div>🥜 Nut Allergy</div>
+                                <div class="ms-opt" data-value="egg_free" onclick="toggleOption(this)"><div class="ms-chk"><svg width="10" height="8"><path d="M1 4l3 3 5-6" stroke="white" stroke-width="1.5" fill="none"/></svg></div>🥚 Egg Free</div>
+                                <div class="ms-opt" data-value="seafood_free" onclick="toggleOption(this)"><div class="ms-chk"><svg width="10" height="8"><path d="M1 4l3 3 5-6" stroke="white" stroke-width="1.5" fill="none"/></svg></div>🐟 No Seafood</div>
+                                <div class="ms-opt" data-value="sugar_free" onclick="toggleOption(this)"><div class="ms-chk"><svg width="10" height="8"><path d="M1 4l3 3 5-6" stroke="white" stroke-width="1.5" fill="none"/></svg></div>🍬 No Added Sugar</div>
+                                <div class="ms-opt" data-value="low_sodium" onclick="toggleOption(this)"><div class="ms-chk"><svg width="10" height="8"><path d="M1 4l3 3 5-6" stroke="white" stroke-width="1.5" fill="none"/></svg></div>🧂 Low Sodium</div>
+                            </div>
+                        </div>
+                        <div class="ms-chips" id="ms-chips"></div>
+                    </div>
+
+                    <button class="gen-btn" id="gen-btn" onclick="buildPlan()">
+                        <i data-lucide="zap" class="w-4 h-4"></i> Generate My Nutrition Plan
+                    </button>
+                    <p id="nutrition-error" class="hidden mt-3 text-xs font-bold text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl p-3"></p>
+                </div>
+            </div>
+
+            <!-- ════ RIGHT: RESULTS ════ -->
+            <div class="lg:col-span-7 reveal-right">
+                <div id="standby-card" class="standby-card">
+                    <div class="w-20 h-20 bg-emerald-50 rounded-3xl flex items-center justify-center"><i data-lucide="salad" class="w-9 h-9 text-emerald-500"></i></div>
+                    <div class="text-center"><p class="text-sm font-black text-slate-700 uppercase tracking-wider">Awaiting Your Profile</p><p class="text-xs text-slate-400 mt-1">Complete the form to generate your AI-crafted plan</p></div>
+                </div>
+
+                <div id="loading-card" class="hidden results-panel min-h-[480px] flex flex-col items-center justify-center gap-5">
+                    <div class="loading-ring"></div>
+                    <p id="loading-msg" class="text-sm font-black uppercase tracking-widest text-emerald-400">Analysing Your Profile…</p>
+                </div>
+
+                <div id="results-card" class="hidden results-panel">
+                    <div class="p-6 border-b border-white/5">
+                        <div class="grid grid-cols-3 gap-3 mb-5">
+                            <div class="stat-pill"><p class="text-[8px] font-black uppercase tracking-widest text-slate-500 mb-1">Target Calories</p><p id="calories-out" class="text-sm font-black text-emerald-400">--</p></div>
+                            <div class="stat-pill"><p class="text-[8px] font-black uppercase tracking-widest text-slate-500 mb-1">Mode</p><p id="condition-out" class="text-xs font-black text-blue-400">Standard</p></div>
+                            <div class="stat-pill"><p class="text-[8px] font-black uppercase tracking-widest text-slate-500 mb-1">Diet Style</p><p id="diet-mode-out" class="text-[11px] font-black text-amber-400">Standard</p></div>
+                        </div>
+                        <div class="bg-white/5 border border-white/5 rounded-2xl p-4">
+                            <p class="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-3">Macro Targets</p>
+                            <div class="macro-row"><span class="macro-label">Protein</span><div class="macro-track"><div class="macro-fill" id="macro-protein" style="width:0%;background:#22c55e;"></div></div><span class="macro-val" id="macro-protein-val">--g</span></div>
+                            <div class="macro-row"><span class="macro-label">Carbs</span><div class="macro-track"><div class="macro-fill" id="macro-carbs" style="width:0%;background:#3b82f6;"></div></div><span class="macro-val" id="macro-carbs-val">--g</span></div>
+                            <div class="macro-row"><span class="macro-label">Fats</span><div class="macro-track"><div class="macro-fill" id="macro-fats" style="width:0%;background:#f59e0b;"></div></div><span class="macro-val" id="macro-fats-val">--g</span></div>
+                        </div>
+                    </div>
+
+                    <div class="p-6 space-y-5">
+                        <div>
+                            <div class="section-tag bg-emerald-500/10 text-emerald-400">📋 Clinical Assessment</div>
+                            <div id="assessment-content" class="text-xs text-slate-400 leading-relaxed markdown-body"></div>
+                        </div>
+
+                        <div>
+                            <div class="section-tag bg-blue-500/10 text-blue-400">🗓️ Your 7-Day Meal Plan</div>
+                            <div class="week-tabs mb-4" id="week-tabs"></div>
+                            <div id="day-content" class="space-y-3"></div>
+                        </div>
+
+                        <!-- Grocery List Integration Feature -->
+                        <div class="mt-6">
+                            <button id="grocery-btn" onclick="generateGroceryList()" class="w-full py-4 bg-slate-800 hover:bg-slate-900 text-white font-black text-xs uppercase tracking-widest rounded-2xl transition-all flex items-center justify-center gap-3 shadow-lg">
+                                <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+                                Generate Weekly Grocery List
+                            </button>
+                        </div>
+
+                        <!-- Hidden container for the grocery output -->
+                        <div id="grocery-output" class="hidden mt-4 bg-slate-900 border border-slate-800 rounded-2xl p-5">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-sm font-black text-white uppercase tracking-widest">Shopping List</h3>
+                                <button onclick="document.getElementById('grocery-output').classList.add('hidden')" class="text-slate-400 hover:text-red-400 transition"><i data-lucide="x" class="w-4 h-4"></i></button>
+                            </div>
+                            <div id="grocery-content" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+                        </div>
+
+                        <div>
+                            <div class="section-tag bg-red-500/10 text-red-400">🚫 Foods to Avoid</div>
+                            <div id="exclusions-content" class="text-xs text-slate-400 leading-relaxed markdown-body"></div>
+                        </div>
+
+                        <div>
+                            <div class="section-tag bg-amber-500/10 text-amber-400">🏋️ Exercise Protocol</div>
+                            <div id="exercise-content" class="text-xs text-slate-400 leading-relaxed markdown-body"></div>
+                        </div>
+
+                        <div id="gadget-card" class="gadget-rec hidden">
+                            <div class="flex items-center gap-4 flex-1 min-w-0">
+                                <div class="w-11 h-11 rounded-xl bg-blue-500/15 border border-blue-500/20 flex items-center justify-center flex-shrink-0 text-xl">⌚</div>
+                                <div class="min-w-0">
+                                    <p class="text-[8px] font-black uppercase tracking-widest text-slate-500">Recommended Gadget</p>
+                                    <p id="gadget-name" class="text-sm font-black text-emerald-400 mt-1"></p>
+                                    <p id="gadget-reason" class="text-[11px] text-slate-500 font-medium mt-0.5"></p>
+                                </div>
+                            </div>
+                            <a id="gadget-link" href="product-detail.html" class="inline-flex items-center gap-2 px-5 py-3 bg-blue-600 text-white text-[10px] font-black uppercase rounded-xl hover:bg-blue-700 transition-all">View Product →</a>
+                        </div>
+
+                        <div id="halal-badge" class="hidden items-center gap-3 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl">
+                            <span class="text-xl">🕌</span>
+                            <p class="text-xs font-bold text-emerald-400">This plan is fully Halal certified — all 21 meals comply with Islamic dietary standards.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- ═══════════ MINIMAL FOOTER ═══════════ -->
+    <footer class="bg-white border-t border-slate-100 py-6 px-6 mt-12 text-center">
+        <p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest">© 2026 Vital Hub Healthcare Systems • Encrypted & Secure</p>
+    </footer>
+
+    <!-- ═══════════ AI WIDGET ═══════════ -->
+    <div id="ai-trigger" class="fixed bottom-8 right-8 z-[100] group">
+        <div class="ai-ring"></div>
+        <button onclick="toggleAIHub()" class="relative bg-blue-600 hover:bg-slate-900 text-white p-5 rounded-3xl shadow-2xl shadow-blue-200 transition-all duration-500 hover:-translate-y-2 flex items-center gap-3">
+            <div class="relative"><i data-lucide="bot" class="w-6 h-6"></i><span class="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 border-2 border-blue-600 rounded-full animate-pulse"></span></div>
+            <span class="text-[10px] font-black uppercase tracking-[0.2em] hidden group-hover:block transition-all">Vital Assistant</span>
+        </button>
+    </div>
+
+    <div id="ai-hub" class="fixed bottom-8 right-8 w-full max-w-[400px] h-[650px] bg-white rounded-[45px] shadow-[0_32px_64px_-15px_rgba(0,0,0,0.2)] z-[101] border border-slate-100 flex flex-col overflow-hidden translate-y-[120%] opacity-0 transition-all duration-500 ease-in-out">
+        <div class="bg-slate-900 p-8 text-white relative overflow-hidden flex-shrink-0">
+            <div class="absolute -top-10 -right-10 w-32 h-32 bg-blue-600/20 rounded-full blur-3xl"></div>
+            <div class="absolute -bottom-8 -left-8 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl"></div>
+            <div class="flex justify-between items-start relative z-10">
+                <div>
+                    <div class="flex items-center gap-2 mb-2"><span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span><p class="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Neural Core v2.0 Online</p></div>
+                    <h3 class="text-xl font-black tracking-tighter">Vital Hub AI</h3><p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1">Health Assistant</p>
+                </div>
+                <button onclick="toggleAIHub()" class="bg-white/10 p-2.5 rounded-xl hover:bg-white/20 transition-all hover:rotate-90 duration-300"><i data-lucide="x" size="16"></i></button>
+            </div>
+            <div class="flex gap-2 mt-5 flex-wrap relative z-10">
+                <button onclick="askQuick('meal plan')" class="px-3 py-1.5 bg-white/10 hover:bg-blue-600 text-white text-[9px] font-black uppercase tracking-wider rounded-full transition-all border border-white/10">Meal Plan</button>
+                <button onclick="askQuick('calories')" class="px-3 py-1.5 bg-white/10 hover:bg-blue-600 text-white text-[9px] font-black uppercase tracking-wider rounded-full transition-all border border-white/10">Calories</button>
+                <button onclick="askQuick('BP Monitor')" class="px-3 py-1.5 bg-white/10 hover:bg-blue-600 text-white text-[9px] font-black uppercase tracking-wider rounded-full transition-all border border-white/10">BP Monitor</button>
+            </div>
+        </div>
+        <div id="ai-content" class="flex-grow p-5 overflow-y-auto space-y-4 bg-slate-50/50 custom-scrollbar">
+            <div class="flex gap-3"><div class="w-8 h-8 bg-blue-600 text-white rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-blue-200"><i data-lucide="sparkles" size="14"></i></div><div class="bg-white p-4 rounded-2xl rounded-tl-none border border-slate-100 shadow-sm max-w-[85%]"><p class="text-xs font-bold text-slate-700 leading-relaxed">Hello! Need help with your nutrition plan? Ask me about calories, macros, or recommended products!</p></div></div>
+        </div>
+        <div class="p-4 bg-white border-t border-slate-100 flex-shrink-0">
+            <div class="relative"><input type="text" id="ai-input" onkeypress="if(event.key==='Enter') processAIQuery()" placeholder="Ask about calories, macros, plans..." class="w-full p-4 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-blue-100 focus:bg-white outline-none transition-all text-xs font-bold text-slate-700 pr-14"><button onclick="processAIQuery()" class="absolute right-2 top-2 bottom-2 px-4 bg-blue-600 text-white rounded-xl hover:bg-slate-900 transition-all flex items-center justify-center shadow-md"><i data-lucide="send" size="15"></i></button></div>
+            <p class="text-center text-[8px] text-slate-300 font-bold uppercase tracking-widest mt-3">AI Medical Support • Vital Hub Labs</p>
+        </div>
+    </div>
+
+    <script src="{% static 'frontend/JS/api.js' %}"></script>
+    <script src="{% static 'frontend/JS/products.js' %}"></script>
+    <script src="{% static 'frontend/JS/script.js' %}"></script>
+    <script src="{% static 'frontend/JS/ai-assistant.js' %}"></script>
+    <script src="{% static 'frontend/JS/animations.js' %}"></script>
+    <script>
+        // AI calls now go through our own backend (/api/ai/...) which holds the
+        // Gemini key server-side — no API key is ever exposed to the browser.
+
+        const productLinks = {
+            "wrist-bp-monitor": { name: "Bluetooth Wrist BP Monitor", url: "product-detail.html?id=wrist-bp-monitor", icon: "🩺" },
+            "glucometer": { name: "Glucometer GL 44 Black", url: "product-detail.html?id=glucometer", icon: "💉" },
+            "smart-ring": { name: "TK9 Smart Ring", url: "product-detail.html?id=smart-ring", icon: "💍" },
+            "fitness-band": { name: "LIGE Fitness Band", url: "product-detail.html?id=fitness-band", icon: "⌚" },
+            "glass-scale": { name: "Glass Weighing Scale", url: "product-detail.html?id=glass-scale", icon: "⚖️" },
+            "calorie-counter": { name: "Calorie Counter", url: "product-detail.html?id=calorie-counter", icon: "📊" },
+            "knee-massager": { name: "Portable Knee Massager", url: "product-detail.html?id=knee-massager", icon: "🦵" },
+            "heating-belt": { name: "Heating Belt for the Back", url: "product-detail.html?id=heating-belt", icon: "🌡️" },
+        };
+
+        let isHalal = false, selectedExclusions = [], userGeoLocation = "Pakistan", weekPlan = [], activeDay = 0;
+        const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+        const DAY_COLORS = ['#22c55e','#3b82f6','#8b5cf6','#f59e0b','#ef4444','#06b6d4','#84cc16'];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.lucide) lucide.createIcons();
+            updateCartBadge();
+            if ("geolocation" in navigator) navigator.geolocation.getCurrentPosition(async (pos) => {
+                try { const r = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${pos.coords.latitude}&longitude=${pos.coords.longitude}&localityLanguage=en`); const d = await r.json(); userGeoLocation = `${d.city||''}, ${d.countryName||'Pakistan'}`.replace(/^, /,''); document.getElementById('user-location').innerText = userGeoLocation; } catch(e) {}
+            });
+            document.addEventListener('click', e => { if (!e.target.closest('.ms-wrapper')) closeDropdown(); });
+            window.addEventListener('scroll', () => document.querySelector('.site-header')?.classList.toggle('scrolled', window.scrollY > 10), { passive: true });
+        });
+
+        function updateCartBadge() { const c = JSON.parse(localStorage.getItem('vitalHub_cart'))||[]; const b = document.getElementById('cart-count'); if(b){b.innerText=c.length;b.style.display=c.length?'flex':'none';} }
+        function toggleMobileNav() { const n = document.getElementById('mobile-nav'); n.classList.toggle('hidden'); n.classList.toggle('flex'); if(window.lucide)lucide.createIcons(); }
+        
+        // Comprehensive toggle fallback for companion file drawer handling
+        function toggleAIHub() {
+            const hub = document.getElementById('ai-hub');
+            if (hub) {
+                const isOpen = hub.classList.contains('translate-y-0');
+                if (isOpen) {
+                    hub.classList.remove('translate-y-0', 'opacity-100');
+                    hub.classList.add('translate-y-[120%]', 'opacity-0');
+                } else {
+                    hub.classList.remove('translate-y-[120%]', 'opacity-0');
+                    hub.classList.add('translate-y-0', 'opacity-100');
+                }
+            }
+        }
+
+        function askQuick(t) { const i = document.getElementById('ai-input'); if(i){i.value=t; if(typeof processAIQuery==='function') { processAIQuery(); } else { console.log("AI query helper ready: " + t); }} }
+        function toggleHalal() { isHalal=!isHalal; document.getElementById('halal-switch').classList.toggle('on',isHalal); }
+        function toggleDropdown() { const dd=document.getElementById('ms-dropdown'),tr=document.getElementById('ms-trigger'),ch=document.getElementById('ms-chevron'),op=dd.classList.contains('open'); dd.classList.toggle('open',!op); tr.classList.toggle('open',!op); ch.style.transform=op?'rotate(0deg)':'rotate(180deg)'; }
+        function closeDropdown() { document.getElementById('ms-dropdown')?.classList.remove('open'); document.getElementById('ms-trigger')?.classList.remove('open'); const ch = document.getElementById('ms-chevron'); if(ch) ch.style.transform='rotate(0deg)'; }
+        function toggleOption(el) { const v=el.dataset.value,i=selectedExclusions.indexOf(v); i===-1?(selectedExclusions.push(v),el.classList.add('sel')):(selectedExclusions.splice(i,1),el.classList.remove('sel')); renderChips(); }
+        function renderChips() { const c=document.getElementById('ms-chips'),p=document.getElementById('ms-placeholder'); c.innerHTML=''; if(!selectedExclusions.length){p.textContent='Select exclusions…';return;} p.textContent=`${selectedExclusions.length} exclusion${selectedExclusions.length>1?'s':''} selected`; selectedExclusions.forEach(v=>{const l=document.querySelector(`.ms-opt[data-value="${v}"]`)?.textContent.trim()||v;const ch=document.createElement('span');ch.className='ms-chip';ch.innerHTML=`${l} <span style="cursor:pointer;opacity:0.7;" onclick="removeChip('${v}'); event.stopPropagation();">✕</span>`;c.appendChild(ch);}); }
+        function removeChip(v) { selectedExclusions=selectedExclusions.filter(x=>x!==v); document.querySelector(`.ms-opt[data-value="${v}"]`)?.classList.remove('sel'); renderChips(); }
+
+        function calcMacros(cal, goal) { let pp,cp,fp; if(goal==='lean_bulk'){pp=.30;cp=.45;fp=.25}else if(goal==='fat_loss'){pp=.35;cp=.35;fp=.30}else if(goal==='athletic_performance'){pp=.28;cp=.50;fp=.22}else{pp=.25;cp=.45;fp=.30} return {protein:Math.round(cal*pp/4),carbs:Math.round(cal*cp/4),fats:Math.round(cal*fp/9)}; }
+        // Product suggestion now comes from the AI's own reasoning (see buildPlan) —
+        // no local keyword-matcher needed.
+
+        function buildWeekTabs(){const c=document.getElementById('week-tabs');c.innerHTML='';DAYS.forEach((d,i)=>{const b=document.createElement('button');b.className='week-tab'+(i===0?' active':'');b.textContent=d.substring(0,3);b.onclick=()=>switchDay(i);c.appendChild(b);});}
+        function switchDay(i){activeDay=i;document.querySelectorAll('.week-tab').forEach((t,j)=>t.classList.toggle('active',j===i));renderDayMeals(i);}
+        function renderDayMeals(i){const c=document.getElementById('day-content'),day=weekPlan[i];if(!day){c.innerHTML='';return;}const col=DAY_COLORS[i],meals=[{icon:'🍳',label:'Breakfast',content:day.breakfast,desc:day.breakfastDesc||''},{icon:'🥗',label:'Lunch',content:day.lunch,desc:day.lunchDesc||''},{icon:'🍽️',label:'Dinner',content:day.dinner,desc:day.dinnerDesc||''}];if(day.snack)meals.push({icon:'🍎',label:'Snack',content:day.snack,desc:''});c.innerHTML=meals.map((m,j)=>`<div class="meal-card" style="animation-delay:${j*.08}s"><div style="display:flex;align-items:flex-start;gap:12px"><div style="width:36px;height:36px;border-radius:10px;background:${col}18;color:${col};display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">${m.icon}</div><div><p style="font-size:9px;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:${col};margin-bottom:4px" class="font-display">${m.label}</p><p style="font-size:13px;font-weight:500;color:#e2e8f0;line-height:1.5">${m.content}</p>${m.desc?`<p style="font-size:11px;color:#6b7280;margin-top:4px">${m.desc}</p>`:''}</div></div></div>`).join('');}
+
+        // Fallback mock meal data removed — on failure the UI now shows a real
+        // error instead of silently substituting fake meals (see buildPlan's catch).
+
+        async function buildPlan(){
+            const w=+document.getElementById('input-weight').value||70,a=+document.getElementById('input-age').value||25,h=+document.getElementById('input-height').value||170,g=document.getElementById('select-gender').value,goal=document.getElementById('select-goal').value,act=document.getElementById('select-activity').value,od=document.getElementById('input-other-diseases').value.trim();
+            const diseases=[];document.querySelectorAll('input[name="disease"]:checked').forEach(e=>diseases.push(e.value));if(od)diseases.push(od);
+            const bmr=g==='male'?(10*w+6.25*h-5*a+5):(10*w+6.25*h-5*a-161),mult={sedentary:1.2,light:1.375,moderate:1.55,intense:1.725};let cals=Math.round(bmr*(mult[act]||1.4));if(goal==='lean_bulk')cals+=300;else if(goal==='fat_loss')cals-=400;else if(goal==='athletic_performance')cals+=200;
+            const excl=[...selectedExclusions];if(isHalal)excl.unshift('halal');
+            const halalNote=isHalal?"CRITICAL: Every meal must be 100% Halal — no pork, no alcohol, no haram ingredients.":"",exclNote=excl.filter(e=>e!=='halal').length?`STRICT exclusions: ${excl.filter(e=>e!=='halal').join(', ')}.`:"";
+
+            document.getElementById('standby-card').style.display='none';document.getElementById('results-card').classList.add('hidden');
+            const lc=document.getElementById('loading-card');lc.style.display='flex';lc.classList.remove('hidden');document.getElementById('gen-btn').disabled=true;
+            document.getElementById('nutrition-error')?.classList.add('hidden');
+
+            // RAG-lite: pull real clinical context from a recent Report Analyzer
+            // result if one exists, instead of relying only on manual checkboxes.
+            let reportContext = '';
+            try {
+                const saved = JSON.parse(localStorage.getItem('vitalHub_lastReport') || 'null');
+                if (saved) {
+                    reportContext = `Condition: ${saved.conditionTag} (${saved.severity} severity). ${saved.summary} Maintenance notes: ${saved.maintenance}`;
+                }
+            } catch (e) { /* ignore malformed/missing stored report */ }
+
+            try{
+                const r=await fetch('/api/ai/nutrition-plan/',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+                    weight:w, height:h, age:a, gender:g, goal, activity:act, calories:cals,
+                    diseases, halal:isHalal, exclusions:excl.filter(e=>e!=='halal'), location:userGeoLocation,
+                    report_context: reportContext
+                })});
+                const d=await r.json();
+                if(!r.ok||!d.success) throw new Error(d.message||`API ${r.status}`);
+                const plan=d;
+                weekPlan=plan.days||[];activeDay=0;
+                document.getElementById('calories-out').innerHTML=`${cals} <span style="font-size:10px;color:#64748b;">kcal/day</span>`;document.getElementById('condition-out').textContent=diseases.length?"Medical Sync":goal==='lean_bulk'?"Hypertrophy":goal==='fat_loss'?"Caloric Deficit":"Wellness";document.getElementById('diet-mode-out').textContent=isHalal?'🕌 Halal':excl.length?excl.slice(0,2).join(', '):'Standard';
+                const mac=calcMacros(cals,goal);setTimeout(()=>{document.getElementById('macro-protein-val').textContent=mac.protein+'g';document.getElementById('macro-carbs-val').textContent=mac.carbs+'g';document.getElementById('macro-fats-val').textContent=mac.fats+'g';const mx=Math.max(mac.protein,mac.carbs,mac.fats);document.getElementById('macro-protein').style.width=(mac.protein/mx*100)+'%';document.getElementById('macro-carbs').style.width=(mac.carbs/mx*100)+'%';document.getElementById('macro-fats').style.width=(mac.fats/mx*100)+'%';},400);
+                document.getElementById('assessment-content').innerHTML=marked.parse(plan.assessment||'');buildWeekTabs();renderDayMeals(0);
+                document.getElementById('exclusions-content').innerHTML=marked.parse(plan.exclusions||'');
+                document.getElementById('exercise-content').innerHTML=marked.parse(plan.exercise||'');
+
+                // Gadget suggestion now comes directly from the AI's own reasoning,
+                // grounded in the real product catalog -- no local keyword-matching.
+                const gid = plan.suggestedProductId, gad = productLinks[gid];
+                if (gad) {
+                    document.getElementById('gadget-name').textContent = gad.name;
+                    document.getElementById('gadget-link').href = gad.url;
+                    const reasonEl = document.getElementById('gadget-reason');
+                    if (reasonEl) reasonEl.textContent = plan.productReason || '';
+                    document.getElementById('gadget-card').classList.remove('hidden');
+                }
+                const hb=document.getElementById('halal-badge');if(isHalal){hb.style.display='flex';hb.classList.remove('hidden')}else{hb.style.display='none'}
+                document.getElementById('results-card').classList.remove('hidden');
+            }catch(err){
+                console.error(err);
+                const errBox = document.getElementById('nutrition-error');
+                if (errBox) {
+                    errBox.textContent = `Couldn't generate your plan: ${err.message}. Please try again.`;
+                    errBox.classList.remove('hidden');
+                } else {
+                    alert(`Couldn't generate your plan: ${err.message}`);
+                }
+            }
+
+            lc.style.display='none';lc.classList.add('hidden');document.getElementById('gen-btn').disabled=false;
+        }
+
+        async function generateGroceryList() {
+            if (!weekPlan || weekPlan.length === 0) {
+                alert("Please generate your nutrition plan first!");
+                return;
+            }
+
+            const btn = document.getElementById('grocery-btn');
+            const outContainer = document.getElementById('grocery-output');
+            const content = document.getElementById('grocery-content');
+            const originalText = btn.innerHTML;
+
+            // Loading State
+            btn.innerHTML = `<div class="loading-ring" style="width:16px;height:16px;border-width:2px;border-top-color:white;"></div> <span class="ml-2">Extracting Ingredients...</span>`;
+            btn.disabled = true;
+
+            try {
+                const r = await fetch('/api/ai/grocery-list/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ week_plan: weekPlan })
+                });
+
+                const listData = await r.json();
+                if (!r.ok || !listData.success) throw new Error(listData.message || `API Error: ${r.status}`);
+
+                content.innerHTML = listData.categories.map(cat => `
+                    <div class="bg-slate-800/80 p-3 rounded-xl border border-slate-700 shadow-sm">
+                        <h4 class="text-[10px] font-black text-emerald-400 uppercase tracking-wider mb-2 border-b border-slate-700 pb-1">${cat.name}</h4>
+                        <ul class="space-y-1.5">
+                            ${cat.items.map(item => `
+                                <li class="flex items-start gap-2 text-xs text-slate-300 font-medium">
+                                    <input type="checkbox" class="mt-0.5 accent-emerald-500 rounded-sm">
+                                    <span>${item}</span>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                `).join('');
+
+                outContainer.classList.remove('hidden');
+                if (window.lucide) lucide.createIcons();
+
+            } catch (err) {
+                console.error("Grocery List Error:", err);
+                alert("Could not generate the grocery list at this time. Please check the console for details.");
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
+```[cite: 7]

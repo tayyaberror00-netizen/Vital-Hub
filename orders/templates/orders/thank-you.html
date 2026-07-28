@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="static-prefix" content="{% static 'frontend/' %}">
+    <title>Order Confirmed | Vital Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="{% static 'frontend/CSS/style.css' %}">
+    <style>
+        button { transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1); }
+        button:hover { transform: translateY(-2px); }
+        button:active { transform: scale(0.97); }
+    </style>
+</head>
+
+<body class="bg-slate-50 min-h-screen flex items-center justify-center font-sans">
+
+    <div
+        class="max-w-md w-full bg-white p-8 lg:p-12 rounded-[40px] lg:rounded-[50px] shadow-2xl text-center space-y-8 mx-6 my-10 reveal">
+
+        <div
+            class="w-20 h-20 lg:w-24 lg:h-24 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mx-auto check-anim">
+            <i data-lucide="check-circle-2" class="w-10 h-10 lg:w-12 lg:h-12"></i>
+        </div>
+
+        <div class="space-y-3">
+            <h1 class="text-2xl lg:text-3xl font-black text-slate-900 tracking-tighter uppercase">Order Confirmed!</h1>
+            <p class="text-slate-400 text-sm leading-relaxed px-2">
+                Your health equipment is being prepared. We've sent a confirmation and tracking link to your email.
+            </p>
+        </div>
+
+        <div class="bg-slate-50 p-5 lg:p-6 rounded-3xl border border-slate-100">
+            <p class="text-[9px] lg:text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Order Number
+            </p>
+            <p class="text-base lg:text-lg font-mono font-bold text-blue-600">#VH-9928410</p>
+        </div>
+
+        <button onclick="clearAndHome()"
+            class="w-full bg-blue-600 text-white py-5 rounded-2xl font-black text-[10px] lg:text-xs uppercase tracking-widest hover:bg-slate-900 transition-all shadow-xl shadow-blue-100">
+            Return to Dashboard
+        </button>
+    </div>
+
+    <script>
+        // Initialize Lucide Icons
+        if (window.lucide) {
+            lucide.createIcons();
+        }
+
+        function clearAndHome() {
+            // Clear the cart so the badge resets to 0 for the next shop
+            localStorage.removeItem('vitalHub_cart');
+            window.location.href = 'index.html';
+        }
+
+        // Show the real order ID passed from checkout, if present
+        const params = new URLSearchParams(window.location.search);
+        const orderId = params.get('order');
+        if (orderId) {
+            document.querySelector('.font-mono').textContent = `#VH-${orderId}`;
+        }
+    </script>
+    <script src="{% static 'frontend/JS/animations.js' %}"></script>
+</body>
+
+</html>

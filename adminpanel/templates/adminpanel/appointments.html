@@ -1,0 +1,150 @@
+{% extends 'adminpanel/base.html' %}
+{% block title %}Appointments{% endblock %}
+{% block nav_appointments %}active{% endblock %}
+{% block page_title %}Appointments{% endblock %}
+{% block page_subtitle %}Manage patient bookings and consultations{% endblock %}
+
+{% block content %}
+<!-- Toolbar -->
+<div class="flex flex-wrap gap-3 mb-6 items-center justify-between">
+    <div class="flex gap-3 flex-wrap">
+        <select id="status-filter" class="input-field w-44" onchange="apptsPage=1; loadAppointments()">
+            <option value="">All Statuses</option>
+            <option value="booked">Booked</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+        </select>
+    </div>
+    <div id="appts-count" class="text-sm text-slate-400 font-medium"></div>
+</div>
+
+<!-- Stats strip -->
+<div class="grid grid-cols-4 gap-4 mb-6">
+    <div class="bg-blue-50 rounded-xl p-4 text-center">
+        <div class="text-2xl font-black text-blue-700" id="cnt-booked">—</div>
+        <div class="text-xs font-black uppercase tracking-widest text-blue-400 mt-1">Booked</div>
+    </div>
+    <div class="bg-emerald-50 rounded-xl p-4 text-center">
+        <div class="text-2xl font-black text-emerald-700" id="cnt-confirmed">—</div>
+        <div class="text-xs font-black uppercase tracking-widest text-emerald-400 mt-1">Confirmed</div>
+    </div>
+    <div class="bg-slate-50 rounded-xl p-4 text-center">
+        <div class="text-2xl font-black text-slate-700" id="cnt-completed">—</div>
+        <div class="text-xs font-black uppercase tracking-widest text-slate-400 mt-1">Completed</div>
+    </div>
+    <div class="bg-red-50 rounded-xl p-4 text-center">
+        <div class="text-2xl font-black text-red-700" id="cnt-cancelled">—</div>
+        <div class="text-xs font-black uppercase tracking-widest text-red-400 mt-1">Cancelled</div>
+    </div>
+</div>
+
+<!-- Table -->
+<div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="bg-slate-50 text-left">
+                    <th class="px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-400">#</th>
+                    <th class="px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-400">Patient</th>
+                    <th class="px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-400">Type</th>
+                    <th class="px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-400">Date & Time</th>
+                    <th class="px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-400">Status</th>
+                    <th class="px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-400">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="appts-body">
+                <tr><td colspan="6" class="px-5 py-10 text-center text-slate-400">Loading…</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <div id="appts-pagination" class="pagination-bar"></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let allAppts = [];
+let apptsPage = 1;
+
+function goToApptsPage(n) { apptsPage = n; loadAppointments(); }
+
+async function loadAppointments() {
+    const s = document.getElementById('status-filter').value;
+    const params = new URLSearchParams();
+    if (s) params.set('status', s);
+    params.set('page', apptsPage);
+
+    const res = await adminFetch('/api/admin/appointments/?' + params);
+    const tbody = document.getElementById('appts-body');
+    const count = document.getElementById('appts-count');
+
+    if (!res.success) return;
+    allAppts = res.appointments || [];
+
+    if (!s) updateStatusCounts(allAppts);
+
+    count.textContent = `${res.total} appointment(s)`;
+    renderPagination('appts-pagination', res.page, res.pages, res.total, 'goToApptsPage');
+
+    if (!allAppts.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="px-5 py-10 text-center text-slate-400">No appointments found</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = allAppts.map(a => `
+        <tr class="table-row">
+            <td class="px-5 py-4 font-bold text-slate-500">#${a.id}</td>
+            <td class="px-5 py-4">
+                <div class="font-semibold text-slate-700">${a.user_name || '—'}</div>
+                <div class="text-xs text-slate-400">${a.user_email || ''}</div>
+            </td>
+            <td class="px-5 py-4">
+                <span class="badge bg-blue-50 text-blue-700 capitalize">${a.type.replace('-', ' ')}</span>
+            </td>
+            <td class="px-5 py-4">
+                <div class="font-semibold text-slate-700">${a.date}</div>
+                <div class="text-xs text-slate-400">${a.time_slot}</div>
+            </td>
+            <td class="px-5 py-4">${statusBadge(a.status)}</td>
+            <td class="px-5 py-4">
+                <div class="flex gap-2 flex-wrap">
+                    ${a.status === 'booked' ? `<button onclick="updateAppt(${a.id}, 'confirmed')" class="btn-success">Confirm</button>` : ''}
+                    ${a.status === 'confirmed' ? `<button onclick="updateAppt(${a.id}, 'completed')" class="btn-success">Complete</button>` : ''}
+                    ${a.status !== 'cancelled' && a.status !== 'completed' ? `<button onclick="updateAppt(${a.id}, 'cancelled')" class="btn-danger">Cancel</button>` : ''}
+                    ${a.status === 'cancelled' || a.status === 'completed' ? '<span class="text-xs text-slate-400 italic">No actions</span>' : ''}
+                </div>
+            </td>
+        </tr>
+    `).join('');
+    lucide.createIcons();
+}
+
+function updateStatusCounts(appts) {
+    ['booked','confirmed','completed','cancelled'].forEach(s => {
+        const el = document.getElementById(`cnt-${s}`);
+        if (el) el.textContent = appts.filter(a => a.status === s).length;
+    });
+}
+
+async function updateAppt(apptId, newStatus) {
+    const res = await adminFetch(`/api/admin/appointments/${apptId}/`, {
+        method: 'PUT',
+        body: JSON.stringify({ status: newStatus })
+    });
+    if (res.success) {
+        showToast(`Appointment #${apptId} → ${newStatus}`);
+        loadAppointments();
+    } else {
+        showToast(res.message || 'Update failed', 'error');
+    }
+}
+
+// Load all first for counts
+adminFetch('/api/admin/appointments/').then(res => {
+    if (res.success) updateStatusCounts(res.appointments || []);
+});
+
+loadAppointments();
+</script>
+{% endblock %}

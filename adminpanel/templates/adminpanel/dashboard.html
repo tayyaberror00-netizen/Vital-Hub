@@ -1,0 +1,126 @@
+{% extends 'adminpanel/base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block nav_dashboard %}active{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block page_subtitle %}Welcome back — here's what's happening{% endblock %}
+
+{% block content %}
+<!-- Stat Cards -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+    <div class="stat-card">
+        <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-black uppercase tracking-widest text-slate-400">Products</span>
+            <div class="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center">
+                <i data-lucide="package" class="w-4 h-4 text-blue-600"></i>
+            </div>
+        </div>
+        <div class="text-3xl font-black text-slate-900" id="stat-products">—</div>
+        <div class="text-xs text-slate-400 mt-1"><span id="stat-active-products" class="text-emerald-600 font-bold">—</span> active</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-black uppercase tracking-widest text-slate-400">Orders</span>
+            <div class="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center">
+                <i data-lucide="shopping-bag" class="w-4 h-4 text-amber-600"></i>
+            </div>
+        </div>
+        <div class="text-3xl font-black text-slate-900" id="stat-orders">—</div>
+        <div class="text-xs text-slate-400 mt-1"><span id="stat-pending-orders" class="text-amber-600 font-bold">—</span> pending</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-black uppercase tracking-widest text-slate-400">Revenue</span>
+            <div class="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center">
+                <i data-lucide="indian-rupee" class="w-4 h-4 text-emerald-600"></i>
+            </div>
+        </div>
+        <div class="text-3xl font-black text-slate-900" id="stat-revenue">—</div>
+        <div class="text-xs text-slate-400 mt-1">total earned</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-black uppercase tracking-widest text-slate-400">Appointments</span>
+            <div class="w-9 h-9 rounded-xl bg-purple-50 flex items-center justify-center">
+                <i data-lucide="calendar-check" class="w-4 h-4 text-purple-600"></i>
+            </div>
+        </div>
+        <div class="text-3xl font-black text-slate-900" id="stat-appts">—</div>
+        <div class="text-xs text-slate-400 mt-1"><span id="stat-today-appts" class="text-purple-600 font-bold">—</span> today</div>
+    </div>
+</div>
+
+<!-- Recent Orders -->
+<div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+    <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+        <h2 class="font-black text-slate-900">Recent Orders</h2>
+        <a href="/admin-panel/orders/" class="text-blue-600 text-sm font-bold hover:underline">View all →</a>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="bg-slate-50 text-left">
+                    <th class="px-6 py-3 text-xs font-black uppercase tracking-widest text-slate-400">#</th>
+                    <th class="px-6 py-3 text-xs font-black uppercase tracking-widest text-slate-400">Customer</th>
+                    <th class="px-6 py-3 text-xs font-black uppercase tracking-widest text-slate-400">Items</th>
+                    <th class="px-6 py-3 text-xs font-black uppercase tracking-widest text-slate-400">Total</th>
+                    <th class="px-6 py-3 text-xs font-black uppercase tracking-widest text-slate-400">Status</th>
+                    <th class="px-6 py-3 text-xs font-black uppercase tracking-widest text-slate-400">Date</th>
+                </tr>
+            </thead>
+            <tbody id="recent-orders-body">
+                <tr><td colspan="6" class="px-6 py-8 text-center text-slate-400">Loading…</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function loadDashboard() {
+    try {
+        const res = await adminFetch('/api/admin/dashboard/');
+        if (!res.success) {
+            document.getElementById('recent-orders-body').innerHTML =
+                `<tr><td colspan="6" class="px-6 py-8 text-center text-red-400">${res.message || 'Failed to load dashboard data.'}</td></tr>`;
+            return;
+        }
+        const d = res.data;
+
+        document.getElementById('stat-products').textContent      = d.total_products;
+        document.getElementById('stat-active-products').textContent = d.active_products;
+        document.getElementById('stat-orders').textContent        = d.total_orders;
+        document.getElementById('stat-pending-orders').textContent = d.pending_orders;
+        document.getElementById('stat-revenue').textContent       = 'Rs. ' + Number(d.total_revenue).toLocaleString('en-IN', {maximumFractionDigits:0});
+        document.getElementById('stat-appts').textContent         = d.pending_appointments;
+        document.getElementById('stat-today-appts').textContent   = d.todays_appointments;
+
+        const tbody = document.getElementById('recent-orders-body');
+        if (!d.recent_orders.length) {
+            tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-8 text-center text-slate-400">No orders yet</td></tr>';
+            return;
+        }
+        tbody.innerHTML = d.recent_orders.map(o => `
+            <tr class="table-row">
+                <td class="px-6 py-4 font-bold text-slate-700">#${o.id}</td>
+                <td class="px-6 py-4 text-slate-600">${o.shipping_name}<br><span class="text-xs text-slate-400">${o.shipping_email}</span></td>
+                <td class="px-6 py-4 text-slate-500">${o.items?.length ?? 0} item(s)</td>
+                <td class="px-6 py-4 font-bold">Rs. ${Number(o.total).toLocaleString('en-IN', {maximumFractionDigits:0})}</td>
+                <td class="px-6 py-4">${statusBadge(o.status)}</td>
+                <td class="px-6 py-4 text-slate-400 text-xs">${fmtDate(o.created_at)}</td>
+            </tr>
+        `).join('');
+        lucide.createIcons();
+    } catch (err) {
+        console.error('Dashboard load failed:', err);
+        document.getElementById('recent-orders-body').innerHTML =
+            `<tr><td colspan="6" class="px-6 py-8 text-center text-red-400">Could not reach the server. Check the terminal running "runserver" for errors.</td></tr>`;
+    }
+}
+
+loadDashboard();
+</script>
+{% endblock %}

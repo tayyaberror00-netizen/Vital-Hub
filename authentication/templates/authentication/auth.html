@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="static-prefix" content="{% static 'frontend/' %}">
+    <title>Vital Hub | Secure Access</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="{% static 'frontend/CSS/style.css' %}">
+    <style>
+        input { transition:border-color .2s ease,box-shadow .2s ease,transform .2s cubic-bezier(.34,1.56,.64,1); }
+        input:focus { transform:scale(1.01); }
+        button { transition:all .3s cubic-bezier(.34,1.56,.64,1); }
+        button:hover { transform:translateY(-2px); }
+        button:active { transform:scale(.96); }
+    </style>
+</head>
+<body class="bg-slate-50 font-sans min-h-screen flex flex-col">
+
+    <div id="progress-bar"></div>
+
+    <!-- ═══════════ STANDARD HEADER ═══════════ -->
+    <header class="site-header flex justify-between items-center px-6 lg:px-12 py-4 lg:py-6 bg-white/95 backdrop-blur-sm sticky top-0 z-50 border-b border-slate-50">
+        <div class="flex items-center gap-2 cursor-pointer" onclick="window.location.href='index.html'">
+            <div class="bg-blue-600 p-1.5 lg:p-2 rounded-xl text-white shadow-lg shadow-blue-100">
+                <i data-lucide="activity" class="w-5 h-5"></i>
+            </div>
+            <span class="text-xl lg:text-2xl font-black tracking-tighter text-blue-900 uppercase">Vital Hub</span>
+        </div>
+        <nav class="hidden lg:flex gap-10 text-[10px] font-black uppercase tracking-widest text-slate-400">
+            <a href="index.html" class="nav-link hover:text-blue-600 transition">Home</a>
+            <a href="store.html" class="nav-link hover:text-blue-600 transition">Store</a>
+            <a href="nutrition.html" class="nav-link hover:text-blue-600 transition">Nutrition AI</a>
+            <a href="xray.html" class="nav-link hover:text-blue-600 transition">X-Ray</a>
+            <a href="report-analyzer.html" class="nav-link hover:text-blue-600 transition">Report Analyzer</a>
+            <a href="appointment.html" class="nav-link hover:text-blue-600 transition">Appointments</a>
+        </nav>
+        <div class="flex items-center gap-4 lg:gap-6">
+            <a href="checkout.html" class="relative group">
+                <i data-lucide="shopping-cart" class="text-slate-400 group-hover:text-blue-600 transition w-5 h-5"></i>
+                <span id="cart-count" class="absolute -top-2 -right-2 bg-blue-600 text-white text-[10px] w-4 h-4 rounded-full items-center justify-center font-bold" style="display:none;">0</span>
+            </a>
+            <button class="lg:hidden p-2 text-slate-400 hover:text-blue-600 transition" onclick="toggleMobileNav()">
+                <i data-lucide="menu" class="w-5 h-5"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Mobile Nav -->
+    <div id="mobile-nav" class="hidden fixed inset-0 bg-white z-[200] flex flex-col items-center justify-center gap-8">
+        <button onclick="toggleMobileNav()" class="absolute top-6 right-6 p-2 text-slate-400 hover:text-slate-900 transition">
+            <i data-lucide="x" class="w-6 h-6"></i>
+        </button>
+        <div class="flex items-center gap-2 mb-4">
+            <div class="bg-blue-600 p-2 rounded-xl text-white"><i data-lucide="activity"></i></div>
+            <span class="text-2xl font-black tracking-tighter text-blue-900 uppercase">Vital Hub</span>
+        </div>
+        <a href="index.html" class="text-2xl font-black uppercase tracking-widest text-slate-900 hover:text-blue-600 transition">Home</a>
+        <a href="store.html" class="text-2xl font-black uppercase tracking-widest text-slate-900 hover:text-blue-600 transition">Store</a>
+        <a href="nutrition.html" class="text-2xl font-black uppercase tracking-widest text-slate-900 hover:text-blue-600 transition">Nutrition AI</a>
+        <a href="xray.html" class="text-2xl font-black uppercase tracking-widest text-slate-900 hover:text-blue-600 transition">X-Ray</a>
+        <a href="report-analyzer.html" class="text-2xl font-black uppercase tracking-widest text-slate-900 hover:text-blue-600 transition">Report Analyzer</a>
+        <a href="appointment.html" class="text-2xl font-black uppercase tracking-widest text-slate-900 hover:text-blue-600 transition">Appointments</a>
+    </div>
+
+    <!-- ═══════════ AUTH CONTENT ═══════════ -->
+    <main class="flex-grow flex items-center justify-center p-4 lg:p-8 reveal">
+        <div class="max-w-4xl w-full bg-white rounded-[30px] lg:rounded-[40px] shadow-2xl shadow-blue-100 overflow-hidden flex flex-col md:flex-row">
+
+            <div class="md:w-1/2 bg-blue-600 p-6 sm:p-8 lg:p-12 text-white flex flex-col justify-between relative overflow-hidden">
+                <div class="absolute -top-16 -right-16 w-48 h-48 bg-blue-500/30 rounded-full blur-3xl"></div>
+                <div class="absolute -bottom-12 -left-12 w-36 h-36 bg-blue-400/20 rounded-full blur-2xl"></div>
+                <div class="relative z-10">
+                    <div class="flex items-center gap-2 mb-8 lg:mb-12 cursor-pointer" onclick="window.location.href='index.html'">
+                        <div class="bg-white/20 p-1.5 rounded-lg"><i data-lucide="activity" class="w-4 h-4"></i></div>
+                        <span class="font-black tracking-tighter text-xl uppercase">Vital Hub</span>
+                    </div>
+                    <h1 class="text-2xl sm:text-3xl lg:text-4xl font-black leading-tight mb-3 sm:mb-4 lg:mb-6">Start Your <br>Health Journey.</h1>
+                    <p class="text-blue-100 text-xs sm:text-sm leading-relaxed mb-4 sm:mb-6 lg:mb-8">Join 20,000+ users leveraging AI for a longer, healthier life.</p>
+                    <div class="space-y-3">
+                        <div class="flex items-center gap-3 text-blue-100 text-sm">
+                            <div class="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0"><i data-lucide="check" class="w-3 h-3"></i></div>
+                            <span>AI-powered health diagnostics</span>
+                        </div>
+                        <div class="flex items-center gap-3 text-blue-100 text-sm">
+                            <div class="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0"><i data-lucide="check" class="w-3 h-3"></i></div>
+                            <span>Personalized nutrition plans</span>
+                        </div>
+                        <div class="flex items-center gap-3 text-blue-100 text-sm">
+                            <div class="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0"><i data-lucide="check" class="w-3 h-3"></i></div>
+                            <span>24/7 specialist consultations</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-[9px] lg:text-[10px] font-bold uppercase tracking-widest opacity-60 hidden md:block relative z-10 mt-8">
+                    Encrypted & Secure Medical Portal
+                </div>
+            </div>
+
+            <div class="md:w-1/2 p-6 sm:p-8 lg:p-12">
+                <div id="login-form">
+                    <h2 class="text-xl sm:text-2xl lg:text-3xl font-black mb-2 tracking-tight">Welcome Back</h2>
+                    <p class="text-slate-400 text-xs sm:text-sm mb-6 sm:mb-8">Enter your credentials to access your hub.</p>
+                    <p id="login-error" class="hidden text-xs font-bold text-red-500 bg-red-50 rounded-xl p-3 mb-4"></p>
+                    <div class="space-y-4">
+                        <input id="login-email" type="email" placeholder="Email Address" class="w-full p-4 bg-slate-50 rounded-2xl border-2 border-transparent outline-none focus:border-blue-200 text-sm transition-all">
+                        <input id="login-password" type="password" placeholder="Password" class="w-full p-4 bg-slate-50 rounded-2xl border-2 border-transparent outline-none focus:border-blue-200 text-sm transition-all">
+                        <div class="flex items-center justify-between text-xs text-slate-400">
+                            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" class="rounded"> Remember me</label>
+                            <a href="#" class="text-blue-600 font-bold hover:underline">Forgot password?</a>
+                        </div>
+                        <button id="login-btn" onclick="handleLogin()" class="btn-shimmer w-full bg-blue-600 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-900 transition shadow-lg shadow-blue-100">
+                            Login to Hub
+                        </button>
+                    </div>
+                    <p class="text-center mt-8 text-xs text-slate-400">
+                        Don't have an account? <button onclick="toggleAuth()" class="text-blue-600 font-bold hover:underline">Sign Up Free</button>
+                    </p>
+                </div>
+
+                <div id="signup-form" class="hidden">
+                    <h2 class="text-xl sm:text-2xl lg:text-3xl font-black mb-2 tracking-tight">Create Account</h2>
+                    <p class="text-slate-400 text-xs sm:text-sm mb-6 sm:mb-8">Join the future of precision medicine.</p>
+                    <p id="signup-error" class="hidden text-xs font-bold text-red-500 bg-red-50 rounded-xl p-3 mb-4"></p>
+                    <div class="space-y-4">
+                        <input id="signup-name" type="text" placeholder="Full Name" class="w-full p-4 bg-slate-50 rounded-2xl border-2 border-transparent outline-none focus:border-blue-200 text-sm transition-all">
+                        <input id="signup-email" type="email" placeholder="Email Address" class="w-full p-4 bg-slate-50 rounded-2xl border-2 border-transparent outline-none focus:border-blue-200 text-sm transition-all">
+                        <input id="signup-password" type="password" placeholder="Password" class="w-full p-4 bg-slate-50 rounded-2xl border-2 border-transparent outline-none focus:border-blue-200 text-sm transition-all">
+                        <input id="signup-confirm" type="password" placeholder="Confirm Password" class="w-full p-4 bg-slate-50 rounded-2xl border-2 border-transparent outline-none focus:border-blue-200 text-sm transition-all">
+                        <p class="text-[10px] text-slate-400 leading-relaxed">By creating an account you agree to our <a href="#" class="text-blue-600">Terms of Service</a> and <a href="#" class="text-blue-600">Privacy Policy</a>.</p>
+                        <button id="signup-btn" onclick="handleSignup()" class="btn-shimmer w-full bg-emerald-500 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-900 transition shadow-lg shadow-emerald-100">
+                            Create My Hub
+                        </button>
+                    </div>
+                    <p class="text-center mt-8 text-xs text-slate-400">
+                        Already a member? <button onclick="toggleAuth()" class="text-blue-600 font-bold hover:underline">Login</button>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- ═══════════ MINIMAL FOOTER ═══════════ -->
+    <footer class="bg-white border-t border-slate-100 py-6 px-6 lg:px-12 text-center">
+        <p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest">© 2026 Vital Hub Healthcare Systems • Encrypted & Secure</p>
+    </footer>
+
+    <script>
+        if (window.lucide) lucide.createIcons();
+        document.addEventListener('DOMContentLoaded', () => { 
+            if (window.lucide) lucide.createIcons();
+            updateCartBadge();
+        });
+
+        function updateCartBadge() {
+            const cart = JSON.parse(localStorage.getItem('vitalHub_cart')) || [];
+            const badge = document.getElementById('cart-count');
+            if (badge) {
+                badge.innerText = cart.length;
+                badge.style.display = cart.length > 0 ? 'flex' : 'none';
+            }
+        }
+
+        function toggleAuth() {
+            document.getElementById('login-form').classList.toggle('hidden');
+            document.getElementById('signup-form').classList.toggle('hidden');
+        }
+        function toggleMobileNav() {
+            const nav = document.getElementById('mobile-nav');
+            nav.classList.toggle('hidden'); nav.classList.toggle('flex');
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function showAuthError(elId, msg) {
+            const el = document.getElementById(elId);
+            el.textContent = msg;
+            el.classList.remove('hidden');
+        }
+
+        async function handleLogin() {
+            const email = document.getElementById('login-email').value.trim();
+            const password = document.getElementById('login-password').value;
+            const btn = document.getElementById('login-btn');
+            const errEl = document.getElementById('login-error');
+            errEl.classList.add('hidden');
+
+            if (!email || !password) {
+                showAuthError('login-error', 'Please enter your email and password.');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Logging in...';
+            try {
+                const data = await AuthAPI.login(email, password);
+                Auth.save(data.token, data.user);
+                window.location.href = data.user.role === 'admin' ? '/admin-panel/' : 'index.html';
+            } catch (err) {
+                showAuthError('login-error', err.message || 'Login failed. Please try again.');
+                btn.disabled = false;
+                btn.textContent = 'Login to Hub';
+            }
+        }
+
+        async function handleSignup() {
+            const name = document.getElementById('signup-name').value.trim();
+            const email = document.getElementById('signup-email').value.trim();
+            const password = document.getElementById('signup-password').value;
+            const confirm = document.getElementById('signup-confirm').value;
+            const btn = document.getElementById('signup-btn');
+            const errEl = document.getElementById('signup-error');
+            errEl.classList.add('hidden');
+
+            if (!name || !email || !password) {
+                showAuthError('signup-error', 'Please fill in all fields.');
+                return;
+            }
+            if (password !== confirm) {
+                showAuthError('signup-error', 'Passwords do not match.');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Creating account...';
+            try {
+                const data = await AuthAPI.register(name, email, password);
+                Auth.save(data.token, data.user);
+                window.location.href = data.user.role === 'admin' ? '/admin-panel/' : 'index.html';
+            } catch (err) {
+                showAuthError('signup-error', err.message || 'Sign up failed. Please try again.');
+                btn.disabled = false;
+                btn.textContent = 'Create My Hub';
+            }
+        }
+    </script>
+    <script src="{% static 'frontend/JS/api.js' %}"></script>
+    <script src="{% static 'frontend/JS/animations.js' %}"></script>
+</body>
+</html>

@@ -1,0 +1,160 @@
+{% extends 'adminpanel/base.html' %}
+{% block title %}Orders{% endblock %}
+{% block nav_orders %}active{% endblock %}
+{% block page_title %}Orders{% endblock %}
+{% block page_subtitle %}Track and manage all customer orders{% endblock %}
+
+{% block content %}
+<!-- Toolbar -->
+<div class="flex flex-wrap gap-3 mb-6 items-center justify-between">
+    <div class="flex gap-3 flex-wrap">
+        <select id="status-filter" class="input-field w-44" onchange="ordersPage=1; loadOrders()">
+            <option value="">All Statuses</option>
+            <option value="pending">Pending</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="shipped">Shipped</option>
+            <option value="delivered">Delivered</option>
+            <option value="cancelled">Cancelled</option>
+        </select>
+    </div>
+    <div id="orders-count" class="text-sm text-slate-400 font-medium"></div>
+</div>
+
+<!-- Table -->
+<div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="bg-slate-50 text-left">
+                    <th class="px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-400">#</th>
+                    <th class="px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-400">Customer</th>
+                    <th class="px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-400">Items</th>
+                    <th class="px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-400">Total</th>
+                    <th class="px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-400">Status</th>
+                    <th class="px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-400">Date</th>
+                    <th class="px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-400">Update Status</th>
+                </tr>
+            </thead>
+            <tbody id="orders-body">
+                <tr><td colspan="7" class="px-5 py-10 text-center text-slate-400">Loading…</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <div id="orders-pagination" class="pagination-bar"></div>
+</div>
+
+<!-- Order Detail Modal -->
+<div id="order-modal" class="modal-overlay hidden">
+    <div class="modal-box">
+        <div class="flex items-center justify-between px-6 py-5 border-b border-slate-100">
+            <h2 class="text-lg font-black text-slate-900">Order Details</h2>
+            <button onclick="document.getElementById('order-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        <div id="order-detail-content" class="px-6 py-5"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const ORDER_STATUSES = ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'];
+let ordersPage = 1;
+
+function goToOrdersPage(n) { ordersPage = n; loadOrders(); }
+
+async function loadOrders() {
+    const s = document.getElementById('status-filter').value;
+    const params = new URLSearchParams();
+    if (s) params.set('status', s);
+    params.set('page', ordersPage);
+
+    const res = await adminFetch('/api/admin/orders/?' + params);
+    const tbody = document.getElementById('orders-body');
+    const count = document.getElementById('orders-count');
+
+    if (!res.success || !res.orders.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="px-5 py-10 text-center text-slate-400">No orders found</td></tr>';
+        count.textContent = '';
+        renderPagination('orders-pagination', 1, 1, 0, 'goToOrdersPage');
+        return;
+    }
+
+    count.textContent = `${res.total} order(s)`;
+    renderPagination('orders-pagination', res.page, res.pages, res.total, 'goToOrdersPage');
+    tbody.innerHTML = res.orders.map(o => `
+        <tr class="table-row">
+            <td class="px-5 py-4 font-bold text-slate-700">
+                <button onclick='showOrderDetail(${JSON.stringify(o)})' class="text-blue-600 hover:underline">#${o.id}</button>
+            </td>
+            <td class="px-5 py-4">
+                <div class="font-semibold text-slate-700">${o.shipping_name}</div>
+                <div class="text-xs text-slate-400">${o.shipping_email}</div>
+            </td>
+            <td class="px-5 py-4 text-slate-500">${o.items?.length ?? 0} item(s)</td>
+            <td class="px-5 py-4 font-bold">Rs. ${Number(o.total).toLocaleString('en-IN', {maximumFractionDigits:0})}</td>
+            <td class="px-5 py-4">${statusBadge(o.status)}</td>
+            <td class="px-5 py-4 text-xs text-slate-400">${fmtDate(o.created_at)}</td>
+            <td class="px-5 py-4">
+                <select class="input-field w-36 text-xs" onchange="updateOrderStatus(${o.id}, this.value)" value="${o.status}">
+                    ${ORDER_STATUSES.map(s => `<option value="${s}" ${s === o.status ? 'selected' : ''}>${s}</option>`).join('')}
+                </select>
+            </td>
+        </tr>
+    `).join('');
+    lucide.createIcons();
+}
+
+async function updateOrderStatus(orderId, newStatus) {
+    const res = await adminFetch(`/api/admin/orders/${orderId}/`, {
+        method: 'PUT',
+        body: JSON.stringify({ status: newStatus })
+    });
+    if (res.success) {
+        showToast(`Order #${orderId} → ${newStatus}`);
+        loadOrders();
+    } else {
+        showToast(res.message || 'Update failed', 'error');
+    }
+}
+
+function showOrderDetail(o) {
+    const content = document.getElementById('order-detail-content');
+    content.innerHTML = `
+        <div class="space-y-4">
+            <div class="grid grid-cols-2 gap-4 text-sm">
+                <div><div class="text-xs text-slate-400 font-black uppercase mb-1">Order #</div><div class="font-bold">${o.id}</div></div>
+                <div><div class="text-xs text-slate-400 font-black uppercase mb-1">Status</div>${statusBadge(o.status)}</div>
+                <div><div class="text-xs text-slate-400 font-black uppercase mb-1">Customer</div><div>${o.shipping_name}</div></div>
+                <div><div class="text-xs text-slate-400 font-black uppercase mb-1">Email</div><div>${o.shipping_email}</div></div>
+                <div class="col-span-2"><div class="text-xs text-slate-400 font-black uppercase mb-1">Shipping Address</div><div>${o.shipping_address}</div></div>
+            </div>
+            <div class="border-t border-slate-100 pt-4">
+                <div class="text-xs text-slate-400 font-black uppercase mb-3">Order Items</div>
+                <div class="space-y-2">
+                    ${(o.items || []).map(item => `
+                        <div class="flex items-center justify-between py-2 border-b border-slate-50">
+                            <div>
+                                <div class="font-semibold text-sm">${item.name}</div>
+                                <div class="text-xs text-slate-400">Qty: ${item.quantity}</div>
+                            </div>
+                            <div class="font-bold text-sm">Rs. ${Number(item.price * item.quantity).toLocaleString('en-IN', {maximumFractionDigits:0})}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            <div class="border-t border-slate-100 pt-4 space-y-1 text-sm">
+                <div class="flex justify-between"><span class="text-slate-500">Subtotal</span><span class="font-bold">Rs. ${Number(o.subtotal).toLocaleString('en-IN', {maximumFractionDigits:0})}</span></div>
+                <div class="flex justify-between"><span class="text-slate-500">Shipping</span><span class="font-bold">Rs. ${Number(o.shipping_cost).toLocaleString('en-IN', {maximumFractionDigits:0})}</span></div>
+                <div class="flex justify-between text-base pt-1 border-t border-slate-100"><span class="font-black">Total</span><span class="font-black text-blue-600">Rs. ${Number(o.total).toLocaleString('en-IN', {maximumFractionDigits:0})}</span></div>
+            </div>
+        </div>
+    `;
+    document.getElementById('order-modal').classList.remove('hidden');
+    lucide.createIcons();
+}
+
+loadOrders();
+</script>
+{% endblock %}

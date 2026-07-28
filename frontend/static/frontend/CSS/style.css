@@ -1,0 +1,265 @@
+/* Core Layout & Typography */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+
+:root {
+    --primary-blue: #3b82f6;
+    --medical-emerald: #10b981;
+    --dark-navy: #0B0F19;
+    --slate-bg: #F8FAFC;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    scroll-behavior: smooth;
+    background-color: var(--slate-bg);
+}
+
+h1, h2, h3, h4, h5 {
+    letter-spacing: -0.04em;
+    text-transform: uppercase;
+}
+
+/* Background Gradients */
+.hero-gradient {
+    background: radial-gradient(circle at top right, #eff6ff, #ffffff);
+}
+
+/* Glassmorphism & Cards */
+.product-card-glass {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (min-width: 1024px) {
+    .product-card-glass:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 25px 50px -12px rgba(59, 130, 246, 0.1);
+    }
+}
+
+/* Medical Scanning Animation */
+@keyframes scan-animation {
+    0% { top: 0%; opacity: 0; filter: blur(4px); }
+    50% { opacity: 1; filter: blur(0px); }
+    100% { top: 100%; opacity: 0; filter: blur(4px); }
+}
+
+.laser-line {
+    position: absolute;
+    width: 100%;
+    height: 8px;
+    background: linear-gradient(90deg, transparent, var(--primary-blue), transparent);
+    box-shadow: 0 0 30px var(--primary-blue);
+    animation: scan-animation 2s ease-in-out infinite;
+    z-index: 50;
+    pointer-events: none;
+}
+
+/* AR Interaction Highlight */
+@keyframes pulse-emerald {
+    0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+.ar-glow {
+    animation: pulse-emerald 2s infinite;
+}
+
+/* Image & Model Styling */
+#user-image-preview, .medical-look {
+    transition: all 0.5s ease;
+    filter: brightness(0.95) contrast(1.05);
+    border-radius: 24px;
+}
+
+/* Custom Scrollbar for Order Summary & Product Sliders */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-blue);
+}
+
+/* Utility: Button Hover & Touch Effects */
+.btn-primary {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+}
+
+.btn-primary:active {
+    transform: scale(0.96);
+    filter: brightness(0.9);
+}
+
+/* Smooth Navigation Underline */
+nav a {
+    position: relative;
+    transition: color 0.3s ease;
+}
+
+nav a::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: var(--primary-blue);
+    transition: width 0.3s ease;
+}
+
+nav a:hover::after {
+    width: 100%;
+}
+
+/* Responsive Grid Adjustments */
+@media (max-width: 640px) {
+    .mobile-padding {
+        padding-left: 1.5rem;
+        padding-right: 1.5rem;
+    }
+}
+/* ══════════════════════════════════════════════════════════════════
+   MODERN ANIMATION SYSTEM (site-wide)
+   Additive only — does not override any existing rule above.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Smooth entrance for every page load (prevents jarring flash-in) */
+@keyframes vh-page-fade { from { opacity: 0; } to { opacity: 1; } }
+body { animation: vh-page-fade 0.35s ease; }
+
+/* ── Button shimmer sweep (fills in the previously-unstyled .btn-shimmer
+   class already used across auth/store/checkout/appointment/xray pages) ── */
+.btn-shimmer {
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+                box-shadow 0.25s ease, filter 0.25s ease;
+}
+.btn-shimmer::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -75%;
+    width: 50%; height: 100%;
+    background: linear-gradient(120deg, transparent, rgba(255,255,255,0.35), transparent);
+    transform: skewX(-20deg);
+    transition: left 0.7s ease;
+}
+.btn-shimmer:hover::before { left: 130%; }
+.btn-shimmer:hover { transform: translateY(-2px); filter: brightness(1.05); }
+.btn-shimmer:active { transform: scale(0.96) translateY(0); }
+
+/* ── Universal button feedback (fallback for any button without its own) ── */
+button, .nav-link, a[class*="btn"] {
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+                filter 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+button:active:not(:disabled) { transform: scale(0.96); }
+button:disabled { cursor: not-allowed; opacity: 0.6; }
+
+/* ── Scroll-reveal variants (used with animations.js IntersectionObserver) ── */
+.reveal { opacity: 0; transform: translateY(24px); transition: opacity .6s ease, transform .6s cubic-bezier(0.16,1,0.3,1); }
+.reveal.in-view { opacity: 1; transform: none; }
+.reveal-up    { opacity: 0; transform: translateY(24px); transition: opacity .6s ease, transform .6s cubic-bezier(0.16,1,0.3,1); }
+.reveal-left  { opacity: 0; transform: translateX(-28px); transition: opacity .6s ease, transform .6s cubic-bezier(0.16,1,0.3,1); }
+.reveal-right { opacity: 0; transform: translateX(28px); transition: opacity .6s ease, transform .6s cubic-bezier(0.16,1,0.3,1); }
+.reveal-scale { opacity: 0; transform: scale(0.92); transition: opacity .6s ease, transform .6s cubic-bezier(0.16,1,0.3,1); }
+.reveal-up.in-view, .reveal-left.in-view, .reveal-right.in-view, .reveal-scale.in-view {
+    opacity: 1; transform: none;
+}
+
+/* Staggered children — add .reveal-stagger to a card/grid container */
+.reveal-stagger > * { opacity: 0; transform: translateY(20px); transition: opacity .5s ease, transform .5s cubic-bezier(0.16,1,0.3,1); }
+.reveal-stagger.in-view > *:nth-child(1) { transition-delay: 0.03s; }
+.reveal-stagger.in-view > *:nth-child(2) { transition-delay: 0.09s; }
+.reveal-stagger.in-view > *:nth-child(3) { transition-delay: 0.15s; }
+.reveal-stagger.in-view > *:nth-child(4) { transition-delay: 0.21s; }
+.reveal-stagger.in-view > *:nth-child(5) { transition-delay: 0.27s; }
+.reveal-stagger.in-view > *:nth-child(6) { transition-delay: 0.33s; }
+.reveal-stagger.in-view > *:nth-child(n+7) { transition-delay: 0.38s; }
+.reveal-stagger.in-view > * { opacity: 1; transform: none; }
+
+/* ── Loading skeleton shimmer (for async-loaded content: store grid, plans, etc.) ── */
+@keyframes vh-skeleton-sweep { 0% { background-position: -400px 0; } 100% { background-position: 400px 0; } }
+.skeleton {
+    background: linear-gradient(90deg, #eef1f5 25%, #f8fafc 37%, #eef1f5 63%);
+    background-size: 400px 100%;
+    animation: vh-skeleton-sweep 1.4s ease-in-out infinite;
+    border-radius: 14px;
+}
+
+/* ── Card hover lift (generic, opt-in via class) ── */
+.hover-lift { transition: transform 0.35s cubic-bezier(0.16,1,0.3,1), box-shadow 0.35s ease; }
+.hover-lift:hover { transform: translateY(-6px); box-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.15); }
+
+/* ── Smooth input focus (adds a soft glow ring site-wide, complements existing styles) ── */
+input, select, textarea {
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s cubic-bezier(0.34,1.56,0.64,1);
+}
+input:focus, select:focus, textarea:focus { transform: translateY(-1px); }
+
+/* Reduced motion respect */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   3D HEADER AVATAR — glossy beveled sphere with mouse-driven tilt.
+   Pure CSS (gradient + shadow layers), no WebGL/model loading cost.
+   ══════════════════════════════════════════════════════════════════ */
+.vh-avatar-3d {
+    position: relative;
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff;
+    font-weight: 900;
+    font-size: 12px;
+    flex-shrink: 0;
+    transform-style: preserve-3d;
+    transform: perspective(300px) rotateX(0deg) rotateY(0deg);
+    transition: transform 0.15s ease-out, box-shadow 0.25s ease;
+    background:
+        radial-gradient(circle at 32% 28%, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0) 42%),
+        radial-gradient(circle at 70% 75%, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0) 55%),
+        linear-gradient(155deg, #4f8dff 0%, #2563eb 55%, #1d3fae 100%);
+    box-shadow:
+        inset 0 2px 3px rgba(255,255,255,0.55),
+        inset 0 -3px 5px rgba(0,0,0,0.35),
+        0 3px 8px rgba(37,99,235,0.45),
+        0 1px 2px rgba(0,0,0,0.15);
+}
+.vh-avatar-3d.is-admin {
+    background:
+        radial-gradient(circle at 32% 28%, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0) 42%),
+        radial-gradient(circle at 70% 75%, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0) 55%),
+        linear-gradient(155deg, #4b5568 0%, #1e293b 55%, #0f172a 100%);
+    box-shadow:
+        inset 0 2px 3px rgba(255,255,255,0.35),
+        inset 0 -3px 5px rgba(0,0,0,0.5),
+        0 3px 8px rgba(15,23,42,0.5),
+        0 1px 2px rgba(0,0,0,0.2);
+}
+.vh-avatar-3d span { transform: translateZ(6px); text-shadow: 0 1px 2px rgba(0,0,0,0.3); }
+.vh-avatar-3d:hover {
+    box-shadow:
+        inset 0 2px 3px rgba(255,255,255,0.6),
+        inset 0 -3px 5px rgba(0,0,0,0.3),
+        0 8px 18px rgba(37,99,235,0.5),
+        0 2px 4px rgba(0,0,0,0.2);
+}

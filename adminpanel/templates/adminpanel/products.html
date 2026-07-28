@@ -1,0 +1,322 @@
+{% extends 'adminpanel/base.html' %}
+{% block title %}Products{% endblock %}
+{% block nav_products %}active{% endblock %}
+{% block page_title %}Products{% endblock %}
+{% block page_subtitle %}Manage your healthcare product catalogue{% endblock %}
+
+{% block content %}
+<!-- Toolbar -->
+<div class="flex flex-wrap gap-3 mb-6 items-center justify-between">
+    <div class="flex gap-3">
+        <div class="relative">
+            <i data-lucide="search" class="absolute left-3 top-2.5 w-4 h-4 text-slate-400"></i>
+            <input id="search-input" type="text" placeholder="Search products…" class="input-field pl-9 w-56" oninput="debouncedLoad()">
+        </div>
+        <select id="cat-filter" class="input-field w-44" onchange="productsPage=1; loadProducts()">
+            <option value="">All Categories</option>
+            <option>Monitoring</option><option>Wellness</option><option>Wearables</option>
+            <option>Relaxation</option><option>Pain Relief</option><option>Fitness</option>
+            <option>Nutrition</option><option>Dental</option><option>Safety</option><option>Mobility</option>
+        </select>
+    </div>
+    <button class="btn-primary flex items-center gap-2" onclick="openAddModal()">
+        <i data-lucide="plus" class="w-4 h-4"></i> Add Product
+    </button>
+</div>
+
+<!-- Table -->
+<div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="bg-slate-50 text-left">
+                    <th class="px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-400">Product</th>
+                    <th class="px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-400">Category</th>
+                    <th class="px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-400">Price (Rs.)</th>
+                    <th class="px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-400">Stock</th>
+                    <th class="px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-400">Status</th>
+                    <th class="px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-400">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="products-body">
+                <tr><td colspan="6" class="px-5 py-10 text-center text-slate-400">Loading…</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <div id="products-pagination" class="pagination-bar"></div>
+</div>
+
+<!-- ── Add / Edit Modal ─────────────────────────────────────────── -->
+<div id="product-modal" class="modal-overlay hidden">
+    <div class="modal-box">
+        <div class="flex items-center justify-between px-6 py-5 border-b border-slate-100">
+            <h2 class="text-lg font-black text-slate-900" id="modal-title">Add Product</h2>
+            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 transition-colors">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <form id="product-form" class="px-6 py-5 space-y-4" onsubmit="submitProduct(event)">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-1">Product ID *</label>
+                    <input id="f-id" type="text" class="input-field" placeholder="e.g. smart-watch" required>
+                    <p class="text-xs text-slate-400 mt-1">Unique slug, no spaces</p>
+                </div>
+                <div>
+                    <label class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-1">Name *</label>
+                    <input id="f-name" type="text" class="input-field" placeholder="Product name" required>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-1">Price (Rs.) *</label>
+                    <input id="f-price" type="number" class="input-field" placeholder="e.g. 4999" min="0" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-1">Category *</label>
+                    <select id="f-category" class="input-field" required>
+                        <option value="">Select category</option>
+                        <option>Monitoring</option><option>Wellness</option><option>Wearables</option>
+                        <option>Relaxation</option><option>Pain Relief</option><option>Fitness</option>
+                        <option>Nutrition</option><option>Dental</option><option>Safety</option><option>Mobility</option>
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-1">Description</label>
+                <textarea id="f-description" class="input-field h-20 resize-none" placeholder="Product description"></textarea>
+            </div>
+
+            <div>
+                <label class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-1">Features (one per line)</label>
+                <textarea id="f-features" class="input-field h-20 resize-none" placeholder="Wireless connectivity&#10;Long battery life&#10;Lightweight"></textarea>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-1">Main Image path</label>
+                    <input id="f-img" type="text" class="input-field" placeholder="images/product-main.avif">
+                </div>
+                <div>
+                    <label class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-1">Stock</label>
+                    <input id="f-stock" type="number" class="input-field" placeholder="100" min="0" value="100">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-1">All Image paths (one per line)</label>
+                <textarea id="f-images" class="input-field h-16 resize-none" placeholder="images/product-main.avif&#10;images/product-2.avif"></textarea>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-1">3D Model file</label>
+                    <input id="f-model-file" type="text" class="input-field" placeholder="models/product.glb">
+                </div>
+                <div>
+                    <label class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-1">Video file</label>
+                    <input id="f-video-file" type="text" class="input-field" placeholder="videos/product.mp4">
+                </div>
+            </div>
+
+            <div class="flex gap-6 pt-2">
+                <label class="flex items-center gap-2 text-sm font-bold text-slate-700 cursor-pointer">
+                    <input id="f-is-active" type="checkbox" class="w-4 h-4 accent-blue-600" checked> Active
+                </label>
+                <label class="flex items-center gap-2 text-sm font-bold text-slate-700 cursor-pointer">
+                    <input id="f-has-model" type="checkbox" class="w-4 h-4 accent-blue-600"> Has 3D Model
+                </label>
+                <label class="flex items-center gap-2 text-sm font-bold text-slate-700 cursor-pointer">
+                    <input id="f-has-video" type="checkbox" class="w-4 h-4 accent-blue-600"> Has Video
+                </label>
+            </div>
+
+            <div class="flex gap-3 pt-4 border-t border-slate-100">
+                <button type="submit" class="btn-primary flex-1" id="submit-btn">Save Product</button>
+                <button type="button" onclick="closeModal()" class="btn-ghost flex-1">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ── Delete Confirm Modal ─────────────────────────────────────── -->
+<div id="delete-modal" class="modal-overlay hidden">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center">
+        <div class="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+            <i data-lucide="trash-2" class="w-6 h-6 text-red-500"></i>
+        </div>
+        <h3 class="text-lg font-black text-slate-900 mb-2">Delete Product?</h3>
+        <p class="text-sm text-slate-500 mb-6">This action cannot be undone. The product will be permanently removed.</p>
+        <div class="flex gap-3">
+            <button onclick="confirmDelete()" class="btn-danger flex-1 py-2.5">Yes, Delete</button>
+            <button onclick="document.getElementById('delete-modal').classList.add('hidden')" class="btn-ghost flex-1 py-2.5">Cancel</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let editingId = null;
+let deletingId = null;
+let debounceTimer = null;
+let productsPage = 1;
+
+function debouncedLoad() {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => { productsPage = 1; loadProducts(); }, 350);
+}
+
+function goToProductsPage(n) { productsPage = n; loadProducts(); }
+
+async function loadProducts() {
+    const q   = document.getElementById('search-input').value;
+    const cat = document.getElementById('cat-filter').value;
+    const params = new URLSearchParams();
+    if (q)   params.set('q', q);
+    if (cat) params.set('category', cat);
+    params.set('page', productsPage);
+
+    const res = await adminFetch('/api/admin/products/?' + params);
+    const tbody = document.getElementById('products-body');
+
+    if (!res.success || !res.products.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="px-5 py-10 text-center text-slate-400">No products found</td></tr>';
+        renderPagination('products-pagination', 1, 1, 0, 'goToProductsPage');
+        return;
+    }
+
+    renderPagination('products-pagination', res.page, res.pages, res.total, 'goToProductsPage');
+    tbody.innerHTML = res.products.map(p => `
+        <tr class="table-row">
+            <td class="px-5 py-4">
+                <div class="font-bold text-slate-800">${p.name}</div>
+                <div class="text-xs text-slate-400 font-mono mt-0.5">${p.id}</div>
+            </td>
+            <td class="px-5 py-4">
+                <span class="badge bg-blue-50 text-blue-700">${p.category}</span>
+            </td>
+            <td class="px-5 py-4 font-bold text-slate-700">Rs. ${Number(p.price).toLocaleString('en-IN')}</td>
+            <td class="px-5 py-4 ${p.stock < 10 ? 'text-red-600 font-bold' : 'text-slate-600'}">${p.stock}</td>
+            <td class="px-5 py-4">
+                <span class="badge ${p.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}">
+                    ${p.is_active ? 'Active' : 'Inactive'}
+                </span>
+            </td>
+            <td class="px-5 py-4">
+                <div class="flex gap-2">
+                    <button onclick='openEditModal(${JSON.stringify(p)})' class="btn-ghost">
+                        <i data-lucide="pencil" class="w-3.5 h-3.5 inline mr-1"></i>Edit
+                    </button>
+                    <button onclick="openDeleteModal('${p.id}')" class="btn-danger">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5 inline mr-1"></i>Del
+                    </button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+    lucide.createIcons();
+}
+
+function openAddModal() {
+    editingId = null;
+    document.getElementById('modal-title').textContent = 'Add Product';
+    document.getElementById('f-id').disabled = false;
+    document.getElementById('product-form').reset();
+    document.getElementById('f-stock').value = 100;
+    document.getElementById('f-is-active').checked = true;
+    document.getElementById('product-modal').classList.remove('hidden');
+}
+
+function openEditModal(p) {
+    editingId = p.id;
+    document.getElementById('modal-title').textContent = 'Edit Product';
+    document.getElementById('f-id').value = p.id;
+    document.getElementById('f-id').disabled = true;
+    document.getElementById('f-name').value = p.name;
+    document.getElementById('f-price').value = p.price;
+    document.getElementById('f-category').value = p.category;
+    document.getElementById('f-description').value = p.description || '';
+    document.getElementById('f-features').value = (p.features || []).join('\n');
+    document.getElementById('f-img').value = p.img || '';
+    document.getElementById('f-images').value = (p.images || []).join('\n');
+    document.getElementById('f-stock').value = p.stock;
+    document.getElementById('f-model-file').value = p.model_file || '';
+    document.getElementById('f-video-file').value = p.video_file || '';
+    document.getElementById('f-is-active').checked = p.is_active;
+    document.getElementById('f-has-model').checked = p.has_model;
+    document.getElementById('f-has-video').checked = p.has_video;
+    document.getElementById('product-modal').classList.remove('hidden');
+}
+
+function closeModal() {
+    document.getElementById('product-modal').classList.add('hidden');
+}
+
+async function submitProduct(e) {
+    e.preventDefault();
+    const btn = document.getElementById('submit-btn');
+    btn.textContent = 'Saving…';
+    btn.disabled = true;
+
+    const featuresRaw = document.getElementById('f-features').value;
+    const imagesRaw   = document.getElementById('f-images').value;
+    const features = featuresRaw.split('\n').map(s => s.trim()).filter(Boolean);
+    const images   = imagesRaw.split('\n').map(s => s.trim()).filter(Boolean);
+
+    const payload = {
+        id:           document.getElementById('f-id').value.trim(),
+        name:         document.getElementById('f-name').value.trim(),
+        price:        parseFloat(document.getElementById('f-price').value),
+        category:     document.getElementById('f-category').value,
+        description:  document.getElementById('f-description').value.trim(),
+        features,
+        img:          document.getElementById('f-img').value.trim(),
+        images,
+        stock:        parseInt(document.getElementById('f-stock').value),
+        model_file:   document.getElementById('f-model-file').value.trim(),
+        video_file:   document.getElementById('f-video-file').value.trim(),
+        is_active:    document.getElementById('f-is-active').checked,
+        has_model:    document.getElementById('f-has-model').checked,
+        has_video:    document.getElementById('f-has-video').checked,
+    };
+
+    const url    = editingId ? `/api/admin/products/${editingId}/` : '/api/admin/products/';
+    const method = editingId ? 'PUT' : 'POST';
+    const res    = await adminFetch(url, { method, body: JSON.stringify(payload) });
+
+    btn.textContent = 'Save Product';
+    btn.disabled = false;
+
+    if (res.success) {
+        showToast(editingId ? 'Product updated!' : 'Product created!');
+        closeModal();
+        loadProducts();
+    } else {
+        const errMsg = Object.values(res.errors || {}).flat()[0] || res.message || 'Error saving product';
+        showToast(errMsg, 'error');
+    }
+}
+
+function openDeleteModal(id) {
+    deletingId = id;
+    document.getElementById('delete-modal').classList.remove('hidden');
+}
+
+async function confirmDelete() {
+    document.getElementById('delete-modal').classList.add('hidden');
+    const res = await adminFetch(`/api/admin/products/${deletingId}/`, { method: 'DELETE' });
+    if (res.success) {
+        showToast('Product deleted');
+        loadProducts();
+    } else {
+        showToast(res.message || 'Delete failed', 'error');
+    }
+}
+
+loadProducts();
+</script>
+{% endblock %}
