@@ -35,6 +35,11 @@ class User(AbstractBaseUser, PermissionsMixin):
     address = models.TextField(blank=True)
     role    = models.CharField(max_length=10, choices=ROLE_CHOICES, default='user')
 
+    AUTH_PROVIDER_CHOICES = [('email', 'Email/Password'), ('google', 'Google')]
+    auth_provider = models.CharField(max_length=10, choices=AUTH_PROVIDER_CHOICES, default='email')
+    google_sub    = models.CharField(max_length=64, unique=True, null=True, blank=True,
+                                      help_text="Google's stable unique subject ID — safer than matching on email alone.")
+
     is_active   = models.BooleanField(default=True)
     is_staff    = models.BooleanField(default=False)
     created_at  = models.DateTimeField(auto_now_add=True)

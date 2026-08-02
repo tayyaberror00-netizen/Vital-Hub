@@ -1,5 +1,13 @@
 <!DOCTYPE html>
 {% load static %}
+<script>
+    // Protected page — bounce anonymous visitors to sign-up before anything
+    // renders (server-side enforcement lives on the API endpoints; this is
+    // the UX layer so they never even see the page first).
+    if (!localStorage.getItem('vh_token')) {
+        window.location.replace('/auth.html?next=' + encodeURIComponent(window.location.pathname));
+    }
+</script>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -10,6 +18,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="stylesheet" href="{% static 'frontend/CSS/style.css' %}">
+    <link rel="stylesheet" href="{% static 'frontend/CSS/spartan-motion.css' %}">
     <style>
         /* ── Report Analyzer Specific Styles ── */
         .stat-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; }
@@ -99,7 +108,7 @@
     <main class="max-w-7xl mx-auto px-4 lg:px-8 py-8 lg:py-12">
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             
-            <div class="lg:col-span-5 space-y-6 reveal-left">
+            <div class="lg:col-span-5 space-y-6 spartan-reveal-left">
                 <div class="bg-white p-6 rounded-[28px] border border-slate-100 shadow-xl shadow-slate-200/50">
                     <div class="flex items-center gap-3 mb-6">
                         <div class="w-2 h-2 rounded-full bg-blue-600 animate-ping"></div>
@@ -108,7 +117,7 @@
 
                     <input type="file" id="report-input" accept="image/*,.pdf" class="hidden" onchange="handleFileSelection(event)">
 
-                    <div id="upload-zone" class="upload-area cursor-pointer flex flex-col p-6 text-center" 
+                    <div id="upload-zone" class="upload-area spartan-glass-hover cursor-pointer flex flex-col p-6 text-center" 
                          onclick="document.getElementById('report-input').click()"
                          ondragover="event.preventDefault(); this.classList.add('drop-active')"
                          ondragleave="this.classList.remove('drop-active')"
@@ -148,7 +157,7 @@
                 </div>
             </div>
 
-            <div class="lg:col-span-7 space-y-6 reveal-right">
+            <div class="lg:col-span-7 space-y-6 spartan-reveal-right">
                 <div id="result-placeholder" class="bg-white rounded-[28px] border border-slate-100 p-12 text-center text-slate-400 font-bold uppercase tracking-widest text-[10px] min-h-[500px] flex flex-col items-center justify-center gap-4">
                     <i data-lucide="cpu" class="w-8 h-8 text-slate-300 animate-pulse"></i>
                     <span>Awaiting Neural Input Context</span>
@@ -292,6 +301,7 @@
             try {
                 const response = await fetch('/api/ai/report-analyzer/', {
                     method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + Auth.getToken() },
                     body: formData
                 });
 
@@ -325,7 +335,10 @@
             } catch (e) { /* storage unavailable — non-fatal */ }
 
             // Render text panels cleanly using Markdown helper structures
-            document.getElementById('analysis-content').innerHTML = marked.parse(data.summary);
+            const summaryMd = Array.isArray(data.summary) ? data.summary.join('\n\n')
+                : (data.summary && typeof data.summary === 'object') ? Object.values(data.summary).join('\n\n')
+                : (data.summary || '');
+            document.getElementById('analysis-content').innerHTML = marked.parse(summaryMd);
             document.getElementById('maintenance-content').innerHTML = `<div>• ${data.maintenance.replace(/\n/g, '</div><div>• ')}</div>`;
             
             // Set dynamic header metrics blocks
@@ -458,6 +471,7 @@
         }
     </script>
     <script src="{% static 'frontend/JS/api.js' %}"></script>
+    <script src="{% static 'frontend/JS/spartan-motion.js' %}"></script>
     <script src="{% static 'frontend/JS/animations.js' %}"></script>
 </body>
 </html>

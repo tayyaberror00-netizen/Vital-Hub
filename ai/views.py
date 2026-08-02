@@ -3,7 +3,7 @@ import logging
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
 logger = logging.getLogger('vitalhub')
@@ -16,6 +16,18 @@ def _first_error(errors):
     return "Invalid request."
 
 
+def _quota_response(e):
+    """Standard 429 payload for a quota-exceeded error, consumed by the
+    frontend to show a friendly 'weekly limit reached' modal."""
+    return Response({
+        'success': False,
+        'quota_exceeded': True,
+        'limit': e.limit,
+        'message': f"You've reached your weekly limit of {e.limit} for this feature. "
+                   f"It resets 7 days after each use — upgrade or check back soon.",
+    }, status=status.HTTP_429_TOO_MANY_REQUESTS)
+
+
 from .serializers import (
     NutritionInputSerializer, ConsultationChatSerializer,
     NutritionPlanSerializer, GroceryListSerializer,
@@ -23,10 +35,13 @@ from .serializers import (
 from .services import (
     NutritionService, XrayService, ConsultationService,
     NutritionPlanService, ReportAnalyzerService,
+    UsageQuotaService, QuotaExceededError,
 )
 
 
 class NutritionView(APIView):
+    # Legacy BMR-only calculator — not called by the current frontend, kept
+    # public/unauthenticated since it predates the quota system.
     permission_classes = [AllowAny]
     parser_classes     = [JSONParser, FormParser]
 
@@ -48,7 +63,10 @@ class NutritionView(APIView):
 
 
 class XrayView(APIView):
-    permission_classes = [AllowAny]
+    # Protected feature — requires login, and normal users are capped at
+    # UsageQuotaService.WEEKLY_LIMITS['xray_scan'] scans / 7 days. Admins
+    # are exempt.
+    permission_classes = [IsAuthenticated]
     parser_classes     = [MultiPartParser, FormParser]
 
     def post(self, request):
@@ -59,14 +77,21 @@ class XrayView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         try:
+            UsageQuotaService.check(request.user, 'xray_scan')
+        except QuotaExceededError as e:
+            return _quota_response(e)
+
+        try:
             result = XrayService.analyze(image)
+            UsageQuotaService.log_usage(request.user, 'xray_scan', detail=image.name)
             return Response({'success': True, **result})
         except ValueError as e:
             return Response(
                 {'success': False, 'message': str(e)},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        except Exception as e:
+        except Exception:
+            logger.exception("AI endpoint error")
             return Response(
                 {'success': False, 'message': 'Analysis failed. Please try again.'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -74,6 +99,8 @@ class XrayView(APIView):
 
 
 class ConsultationChatView(APIView):
+    # Public per product spec — the AI Assistant chat stays open to everyone,
+    # logged in or not.
     permission_classes = [AllowAny]
     parser_classes     = [JSONParser]
 
@@ -98,15 +125,27 @@ class ConsultationChatView(APIView):
 
 
 class NutritionPlanView(APIView):
-    permission_classes = [AllowAny]
+    # Protected feature — requires login, capped at 3 plans / 7 days for
+    # normal users. Admins are exempt.
+    permission_classes = [IsAuthenticated]
     parser_classes     = [JSONParser]
 
     def post(self, request):
         serializer = NutritionPlanSerializer(data=request.data)
         if not serializer.is_valid():
             return Response({'success': False, 'errors': serializer.errors, 'message': _first_error(serializer.errors)}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            UsageQuotaService.check(request.user, 'nutrition_plan')
+        except QuotaExceededError as e:
+            return _quota_response(e)
+
         try:
             plan = NutritionPlanService.generate_week_plan(serializer.validated_data)
+            UsageQuotaService.log_usage(
+                request.user, 'nutrition_plan',
+                detail=f"goal={serializer.validated_data.get('goal')}",
+            )
             return Response({'success': True, **plan})
         except ValueError as e:
             return Response({'success': False, 'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -119,7 +158,9 @@ class NutritionPlanView(APIView):
 
 
 class GroceryListView(APIView):
-    permission_classes = [AllowAny]
+    # Protected (same gate as the nutrition plan it's derived from), but not
+    # separately quota-limited — generating a plan already consumed the quota.
+    permission_classes = [IsAuthenticated]
     parser_classes     = [JSONParser]
 
     def post(self, request):
@@ -127,7 +168,10 @@ class GroceryListView(APIView):
         if not serializer.is_valid():
             return Response({'success': False, 'errors': serializer.errors, 'message': _first_error(serializer.errors)}, status=status.HTTP_400_BAD_REQUEST)
         try:
-            groceries = NutritionPlanService.generate_grocery_list(serializer.validated_data['week_plan'])
+            groceries = NutritionPlanService.generate_grocery_list(
+                serializer.validated_data['week_plan'],
+                budget=serializer.validated_data.get('budget', False),
+            )
             return Response({'success': True, **groceries})
         except ValueError as e:
             return Response({'success': False, 'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -140,15 +184,25 @@ class GroceryListView(APIView):
 
 
 class ReportAnalyzerView(APIView):
-    permission_classes = [AllowAny]
+    # Protected feature — requires login, capped at
+    # UsageQuotaService.WEEKLY_LIMITS['report_scan'] scans / 7 days. Admins
+    # are exempt.
+    permission_classes = [IsAuthenticated]
     parser_classes     = [MultiPartParser, FormParser]
 
     def post(self, request):
         report_file = request.FILES.get('report')
         if not report_file:
             return Response({'success': False, 'message': 'No report file provided.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            UsageQuotaService.check(request.user, 'report_scan')
+        except QuotaExceededError as e:
+            return _quota_response(e)
+
         try:
             result = ReportAnalyzerService.analyze(report_file)
+            UsageQuotaService.log_usage(request.user, 'report_scan', detail=report_file.name)
             return Response({'success': True, **result})
         except ValueError as e:
             return Response({'success': False, 'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)

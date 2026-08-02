@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.urls import path, include
+from frontend.api_views import ContactMessageView
 
 urlpatterns = [
     # Django admin panel
@@ -13,6 +14,7 @@ urlpatterns = [
     path('api/admin/',        include('adminpanel.api_urls')),
     path('api/ai/',           include('ai.urls')),
     path('api/newsletter/',   include('frontend.api_urls')),
+    path('api/contact/',      ContactMessageView.as_view()),
 
     # ── Custom admin panel pages ─────────────────────────────────────
     path('admin-panel/', include('adminpanel.urls')),

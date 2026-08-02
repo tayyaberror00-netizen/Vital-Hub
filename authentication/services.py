@@ -19,7 +19,7 @@ class AuthService:
     #  Token factory                                                       #
     # ------------------------------------------------------------------ #
 
-    TOKEN_LIFETIME = timedelta(hours=1)
+    TOKEN_LIFETIME = timedelta(days=7)
 
     @staticmethod
     def generate_token(user: User) -> tuple[str, str]:
@@ -70,6 +70,62 @@ class AuthService:
 
         token, _ = AuthService.generate_token(user)
         logger.info('User logged in: %s', user.email)
+        return user, token
+
+    @staticmethod
+    def google_login(id_token_str: str) -> tuple[User, str]:
+        """Verify a Google ID token (from Google Identity Services on the
+        frontend) and find-or-create the matching user. Returns (user, token)
+        just like the regular email/password login, so the rest of the app
+        never needs to know which auth method was used."""
+        from google.oauth2 import id_token as google_id_token
+        from google.auth.transport import requests as google_requests
+
+        client_id = getattr(settings, 'GOOGLE_OAUTH_CLIENT_ID', '')
+        if not client_id:
+            raise AuthenticationFailed('Google sign-in is not configured on this server.')
+
+        try:
+            payload = google_id_token.verify_oauth2_token(
+                id_token_str, google_requests.Request(), client_id,
+            )
+        except ValueError:
+            logger.warning('Google OAuth: invalid or expired ID token presented')
+            raise AuthenticationFailed('Google sign-in verification failed. Please try again.')
+
+        if not payload.get('email_verified', False):
+            raise AuthenticationFailed('Your Google account email is not verified.')
+
+        sub   = payload['sub']
+        email = payload['email'].lower()
+        name  = payload.get('name') or email.split('@')[0]
+
+        # 1. Already linked to this exact Google account — fastest path.
+        user = User.objects.filter(google_sub=sub).first()
+
+        # 2. First time signing in with Google, but an account with this
+        #    email already exists (e.g. they originally signed up with a
+        #    password) — link the two rather than creating a duplicate.
+        if user is None:
+            user = User.objects.filter(email=email).first()
+            if user is not None:
+                user.google_sub = sub
+                user.save(update_fields=['google_sub'])
+                logger.info('Linked existing account %s to Google', email)
+
+        # 3. Genuinely new user — create a passwordless account.
+        if user is None:
+            user = User.objects.create_user(
+                email=email, name=name, password=None,
+                auth_provider='google', google_sub=sub,
+            )
+            logger.info('New user created via Google OAuth: %s', email)
+
+        if not user.is_active:
+            raise AuthenticationFailed('Account is deactivated.')
+
+        token, _ = AuthService.generate_token(user)
+        logger.info('User logged in via Google: %s', user.email)
         return user, token
 
     @staticmethod

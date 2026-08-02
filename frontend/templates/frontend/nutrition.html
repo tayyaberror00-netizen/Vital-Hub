@@ -1,5 +1,13 @@
 <!DOCTYPE html>
 {% load static %}
+<script>
+    // Protected page — bounce anonymous visitors to sign-up before anything
+    // renders (server-side enforcement lives on the API endpoints; this is
+    // the UX layer so they never even see the page first).
+    if (!localStorage.getItem('vh_token')) {
+        window.location.replace('/auth.html?next=' + encodeURIComponent(window.location.pathname));
+    }
+</script>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -12,6 +20,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="stylesheet" href="{% static 'frontend/CSS/style.css' %}">
+    <link rel="stylesheet" href="{% static 'frontend/CSS/spartan-motion.css' %}">
     
     <style>
         :root { --green: #1a7a4a; --green-light: #22c55e; --green-pale: #dcfce7; --accent: #f0a500; }
@@ -27,8 +36,10 @@
         .check-label input { accent-color: #22c55e; width: 15px; height: 15px; }
 
         .halal-wrap { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; background: linear-gradient(135deg, #f0fdf4, #ecfdf5); border: 1.5px solid #bbf7d0; border-radius: 14px; cursor: pointer; transition: all 0.2s; }
+        .budget-wrap { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; background: linear-gradient(135deg, #fffbeb, #fef3c7); border: 1.5px solid #fde68a; border-radius: 14px; cursor: pointer; transition: all 0.2s; margin-top: 10px; }
         .toggle-sw { width: 44px; height: 24px; background: #d1d5db; border-radius: 12px; position: relative; transition: background 0.3s; flex-shrink: 0; }
         .toggle-sw.on { background: #22c55e; }
+        .budget-wrap .toggle-sw.on { background: #d97706; }
         .toggle-knob { position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: white; border-radius: 50%; transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1); box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
         .toggle-sw.on .toggle-knob { transform: translateX(20px); }
 
@@ -205,6 +216,13 @@
                             </div>
                             <div class="toggle-sw" id="halal-switch"><div class="toggle-knob"></div></div>
                         </div>
+                        <div class="budget-wrap" onclick="toggleBudget()">
+                            <div class="flex items-center gap-3">
+                                <span class="text-2xl">💸</span>
+                                <div><p class="text-xs font-black text-amber-800">Budget-Friendly Plan</p><p class="text-[10px] text-amber-700 font-medium">Prioritise affordable, local, everyday ingredients</p></div>
+                            </div>
+                            <div class="toggle-sw" id="budget-switch"><div class="toggle-knob"></div></div>
+                        </div>
                     </div>
 
                     <div>
@@ -319,6 +337,10 @@
                             <span class="text-xl">🕌</span>
                             <p class="text-xs font-bold text-emerald-400">This plan is fully Halal certified — all 21 meals comply with Islamic dietary standards.</p>
                         </div>
+                        <div id="budget-badge" class="hidden items-center gap-3 p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl mt-3">
+                            <span class="text-xl">💸</span>
+                            <p class="text-xs font-bold text-amber-400">Budget-friendly mode — this plan favours affordable, everyday local ingredients over premium/imported ones.</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -369,6 +391,7 @@
     <script src="{% static 'frontend/JS/products.js' %}"></script>
     <script src="{% static 'frontend/JS/script.js' %}"></script>
     <script src="{% static 'frontend/JS/ai-assistant.js' %}"></script>
+    <script src="{% static 'frontend/JS/spartan-motion.js' %}"></script>
     <script src="{% static 'frontend/JS/animations.js' %}"></script>
     <script>
         // AI calls now go through our own backend (/api/ai/...) which holds the
@@ -385,7 +408,7 @@
             "heating-belt": { name: "Heating Belt for the Back", url: "product-detail.html?id=heating-belt", icon: "🌡️" },
         };
 
-        let isHalal = false, selectedExclusions = [], userGeoLocation = "Pakistan", weekPlan = [], activeDay = 0;
+        let isHalal = false, isBudget = false, selectedExclusions = [], userGeoLocation = "Pakistan", weekPlan = [], activeDay = 0;
         const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
         const DAY_COLORS = ['#22c55e','#3b82f6','#8b5cf6','#f59e0b','#ef4444','#06b6d4','#84cc16'];
 
@@ -419,6 +442,7 @@
 
         function askQuick(t) { const i = document.getElementById('ai-input'); if(i){i.value=t; if(typeof processAIQuery==='function') { processAIQuery(); } else { console.log("AI query helper ready: " + t); }} }
         function toggleHalal() { isHalal=!isHalal; document.getElementById('halal-switch').classList.toggle('on',isHalal); }
+        function toggleBudget() { isBudget=!isBudget; document.getElementById('budget-switch').classList.toggle('on',isBudget); }
         function toggleDropdown() { const dd=document.getElementById('ms-dropdown'),tr=document.getElementById('ms-trigger'),ch=document.getElementById('ms-chevron'),op=dd.classList.contains('open'); dd.classList.toggle('open',!op); tr.classList.toggle('open',!op); ch.style.transform=op?'rotate(0deg)':'rotate(180deg)'; }
         function closeDropdown() { document.getElementById('ms-dropdown')?.classList.remove('open'); document.getElementById('ms-trigger')?.classList.remove('open'); const ch = document.getElementById('ms-chevron'); if(ch) ch.style.transform='rotate(0deg)'; }
         function toggleOption(el) { const v=el.dataset.value,i=selectedExclusions.indexOf(v); i===-1?(selectedExclusions.push(v),el.classList.add('sel')):(selectedExclusions.splice(i,1),el.classList.remove('sel')); renderChips(); }
@@ -458,9 +482,9 @@
             } catch (e) { /* ignore malformed/missing stored report */ }
 
             try{
-                const r=await fetch('/api/ai/nutrition-plan/',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+                const r=await fetch('/api/ai/nutrition-plan/',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+Auth.getToken()},body:JSON.stringify({
                     weight:w, height:h, age:a, gender:g, goal, activity:act, calories:cals,
-                    diseases, halal:isHalal, exclusions:excl.filter(e=>e!=='halal'), location:userGeoLocation,
+                    diseases, halal:isHalal, budget:isBudget, exclusions:excl.filter(e=>e!=='halal'), location:userGeoLocation,
                     report_context: reportContext
                 })});
                 const d=await r.json();
@@ -469,9 +493,14 @@
                 weekPlan=plan.days||[];activeDay=0;
                 document.getElementById('calories-out').innerHTML=`${cals} <span style="font-size:10px;color:#64748b;">kcal/day</span>`;document.getElementById('condition-out').textContent=diseases.length?"Medical Sync":goal==='lean_bulk'?"Hypertrophy":goal==='fat_loss'?"Caloric Deficit":"Wellness";document.getElementById('diet-mode-out').textContent=isHalal?'🕌 Halal':excl.length?excl.slice(0,2).join(', '):'Standard';
                 const mac=calcMacros(cals,goal);setTimeout(()=>{document.getElementById('macro-protein-val').textContent=mac.protein+'g';document.getElementById('macro-carbs-val').textContent=mac.carbs+'g';document.getElementById('macro-fats-val').textContent=mac.fats+'g';const mx=Math.max(mac.protein,mac.carbs,mac.fats);document.getElementById('macro-protein').style.width=(mac.protein/mx*100)+'%';document.getElementById('macro-carbs').style.width=(mac.carbs/mx*100)+'%';document.getElementById('macro-fats').style.width=(mac.fats/mx*100)+'%';},400);
-                document.getElementById('assessment-content').innerHTML=marked.parse(plan.assessment||'');buildWeekTabs();renderDayMeals(0);
-                document.getElementById('exclusions-content').innerHTML=marked.parse(plan.exclusions||'');
-                document.getElementById('exercise-content').innerHTML=marked.parse(plan.exercise||'');
+                function toMarkdown(val) {
+                    if (Array.isArray(val)) return val.map(v => `- ${v}`).join('\n');
+                    if (val && typeof val === 'object') return Object.values(val).map(v => `- ${v}`).join('\n');
+                    return val || '';
+                }
+                document.getElementById('assessment-content').innerHTML=marked.parse(toMarkdown(plan.assessment));buildWeekTabs();renderDayMeals(0);
+                document.getElementById('exclusions-content').innerHTML=marked.parse(toMarkdown(plan.exclusions));
+                document.getElementById('exercise-content').innerHTML=marked.parse(toMarkdown(plan.exercise));
 
                 // Gadget suggestion now comes directly from the AI's own reasoning,
                 // grounded in the real product catalog -- no local keyword-matching.
@@ -484,6 +513,7 @@
                     document.getElementById('gadget-card').classList.remove('hidden');
                 }
                 const hb=document.getElementById('halal-badge');if(isHalal){hb.style.display='flex';hb.classList.remove('hidden')}else{hb.style.display='none'}
+                const bb=document.getElementById('budget-badge');if(isBudget){bb.style.display='flex';bb.classList.remove('hidden')}else{bb.style.display='none'}
                 document.getElementById('results-card').classList.remove('hidden');
             }catch(err){
                 console.error(err);
@@ -517,8 +547,8 @@
             try {
                 const r = await fetch('/api/ai/grocery-list/', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ week_plan: weekPlan })
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + Auth.getToken() },
+                    body: JSON.stringify({ week_plan: weekPlan, budget: isBudget })
                 });
 
                 const listData = await r.json();
@@ -552,4 +582,3 @@
     </script>
 </body>
 </html>
-```[cite: 7]

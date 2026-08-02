@@ -37,3 +37,10 @@ class JWTAuthentication(BaseAuthentication):
         request._jwt_payload = payload
 
         return (user, token)
+
+    def authenticate_header(self, request):
+        # Declaring this makes DRF return 401 (not 403) for missing/expired/
+        # invalid tokens, which is the semantically correct status for "you
+        # need to log in", vs 403 which means "you're logged in but not
+        # allowed here".
+        return 'Bearer'

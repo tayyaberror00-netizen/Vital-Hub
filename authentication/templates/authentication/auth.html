@@ -9,6 +9,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="{% static 'frontend/CSS/style.css' %}">
+    <link rel="stylesheet" href="{% static 'frontend/CSS/spartan-motion.css' %}">
     <style>
         input { transition:border-color .2s ease,box-shadow .2s ease,transform .2s cubic-bezier(.34,1.56,.64,1); }
         input:focus { transform:scale(1.01); }
@@ -138,6 +139,17 @@
                         Already a member? <button onclick="toggleAuth()" class="text-blue-600 font-bold hover:underline">Login</button>
                     </p>
                 </div>
+
+                <!-- Google Sign-In works identically for new or returning users,
+                     so one shared control covers both forms — no separate
+                     "Google signup" flow needed. -->
+                <div class="flex items-center gap-3 my-6">
+                    <div class="flex-1 h-px bg-slate-100"></div>
+                    <span class="text-[10px] font-black uppercase tracking-widest text-slate-300">Or</span>
+                    <div class="flex-1 h-px bg-slate-100"></div>
+                </div>
+                <p id="google-auth-error" class="hidden text-xs font-bold text-red-500 bg-red-50 rounded-xl p-3 mb-4"></p>
+                <div id="google-signin-button" class="flex justify-center"></div>
             </div>
         </div>
     </main>
@@ -147,6 +159,7 @@
         <p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest">© 2026 Vital Hub Healthcare Systems • Encrypted & Secure</p>
     </footer>
 
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script>
         if (window.lucide) lucide.createIcons();
         document.addEventListener('DOMContentLoaded', () => { 
@@ -179,6 +192,65 @@
             el.classList.remove('hidden');
         }
 
+        // ── Google Sign-In (Google Identity Services) ──────────────────────
+        const GOOGLE_CLIENT_ID = "{{ google_oauth_client_id|escapejs }}";
+
+        function initGoogleSignIn() {
+            if (!GOOGLE_CLIENT_ID) {
+                // Not configured yet — hide the button rather than show a broken one.
+                document.getElementById('google-signin-button').style.display = 'none';
+                return;
+            }
+            if (!window.google || !window.google.accounts) {
+                // GIS script hasn't loaded yet (async) — retry shortly.
+                setTimeout(initGoogleSignIn, 200);
+                return;
+            }
+            google.accounts.id.initialize({
+                client_id: GOOGLE_CLIENT_ID,
+                callback: handleGoogleCredential,
+            });
+            google.accounts.id.renderButton(
+                document.getElementById('google-signin-button'),
+                { theme: 'outline', size: 'large', shape: 'pill', width: 280, text: 'continue_with' }
+            );
+        }
+
+        async function handleGoogleCredential(response) {
+            const errEl = document.getElementById('google-auth-error');
+            errEl.classList.add('hidden');
+            try {
+                const res = await fetch('/api/auth/google/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ credential: response.credential }),
+                });
+                const data = await res.json();
+                if (!res.ok || !data.success) {
+                    throw new Error(data.message || 'Google sign-in failed.');
+                }
+                Auth.save(data.token, data.user);
+                window.location.href = postLoginDestination(data.user);
+            } catch (err) {
+                errEl.textContent = err.message || 'Google sign-in failed. Please try again.';
+                errEl.classList.remove('hidden');
+            }
+        }
+
+        initGoogleSignIn();
+
+        function postLoginDestination(user) {
+            if (user.role === 'admin') return '/admin-panel/';
+            const params = new URLSearchParams(window.location.search);
+            const next = params.get('next');
+            // Only follow same-site relative paths — never an absolute URL,
+            // to avoid this becoming an open-redirect vector.
+            if (next && next.startsWith('/') && !next.startsWith('//')) {
+                return next;
+            }
+            return 'index.html';
+        }
+
         async function handleLogin() {
             const email = document.getElementById('login-email').value.trim();
             const password = document.getElementById('login-password').value;
@@ -196,7 +268,7 @@
             try {
                 const data = await AuthAPI.login(email, password);
                 Auth.save(data.token, data.user);
-                window.location.href = data.user.role === 'admin' ? '/admin-panel/' : 'index.html';
+                window.location.href = postLoginDestination(data.user);
             } catch (err) {
                 showAuthError('login-error', err.message || 'Login failed. Please try again.');
                 btn.disabled = false;
@@ -227,7 +299,7 @@
             try {
                 const data = await AuthAPI.register(name, email, password);
                 Auth.save(data.token, data.user);
-                window.location.href = data.user.role === 'admin' ? '/admin-panel/' : 'index.html';
+                window.location.href = postLoginDestination(data.user);
             } catch (err) {
                 showAuthError('signup-error', err.message || 'Sign up failed. Please try again.');
                 btn.disabled = false;
@@ -236,6 +308,7 @@
         }
     </script>
     <script src="{% static 'frontend/JS/api.js' %}"></script>
+    <script src="{% static 'frontend/JS/spartan-motion.js' %}"></script>
     <script src="{% static 'frontend/JS/animations.js' %}"></script>
 </body>
 </html>

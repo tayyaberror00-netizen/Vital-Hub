@@ -115,7 +115,30 @@ STATICFILES_DIRS = []  # app static dirs are auto-discovered
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_API_KEY', '')
-GEMINI_API_KEY    = os.getenv('GEMINI_API_KEY', '')
+GEMINI_API_KEY    = os.getenv('GEMINI_API_KEY', '')  # kept in case Google resolves the AQ-key issue later
+OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY', '')
+OPENROUTER_MODEL    = os.getenv('OPENROUTER_MODEL', 'google/gemma-4-31b-it:free')
+GOOGLE_OAUTH_CLIENT_ID = os.getenv('GOOGLE_OAUTH_CLIENT_ID', '')
+
+# ── Email (Gmail SMTP) ────────────────────────────────────────────────────
+# Uses a Gmail "App Password", NOT your real Gmail password — Google
+# disabled plain-password SMTP auth for regular accounts. Generate one at
+# https://myaccount.google.com/apppasswords (requires 2-Step Verification
+# to be enabled on the account first).
+EMAIL_BACKEND       = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST          = 'smtp.gmail.com'
+EMAIL_PORT          = 587
+EMAIL_USE_TLS       = True
+EMAIL_HOST_USER     = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL  = EMAIL_HOST_USER
+CONTACT_RECIPIENT_EMAIL = os.getenv('CONTACT_RECIPIENT_EMAIL', 'vitalhub52@gmail.com')
+
+# If no SMTP credentials are configured yet, fall back to printing emails to
+# the console instead of silently failing — keeps local dev usable before
+# Gmail App Password is set up.
+if not EMAIL_HOST_USER or not EMAIL_HOST_PASSWORD:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # Security headers (safe to enable in both dev and prod)
 SECURE_CONTENT_TYPE_NOSNIFF = True

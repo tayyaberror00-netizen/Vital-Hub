@@ -9,6 +9,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="{% static 'frontend/CSS/style.css' %}">
+    <link rel="stylesheet" href="{% static 'frontend/CSS/spartan-motion.css' %}">
 </head>
 <body class="bg-[#F8FAFC] font-sans text-slate-900">
 
@@ -195,7 +196,7 @@
                             <i data-lucide="box" size="14"></i> View in Room
                         </button>` : '';
                     return `
-                        <div class="bg-white p-6 rounded-[32px] shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 relative group flex flex-col h-full">
+                        <div class="spartan-card spartan-reveal bg-white p-6 rounded-[32px] shadow-sm border border-slate-100 relative group flex flex-col h-full">
                             <span class="absolute top-6 right-6 text-[9px] font-black text-slate-300 uppercase tracking-widest">${p.hasModel ? '3D • AR' : 'Digital'}</span>
                             <div class="aspect-square mb-6 flex items-center justify-center p-4">
                                 <img src="${p.img}" alt="${p.name}" class="max-h-full object-contain group-hover:scale-105 transition-transform duration-500">
@@ -219,6 +220,7 @@
             }
 
             lucide.createIcons();
+            window.spartanMotionRefresh?.();
 
             const cart = JSON.parse(localStorage.getItem('vitalHub_cart')) || [];
             const badge = document.getElementById('cart-count');
@@ -240,6 +242,7 @@
 
     </script>
     <script src="{% static 'frontend/JS/ai-assistant.js' %}"></script>
+    <script src="{% static 'frontend/JS/spartan-motion.js' %}"></script>
     <script src="{% static 'frontend/JS/animations.js' %}"></script>
 </body>
 </html>

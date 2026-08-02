@@ -12,6 +12,8 @@ from orders.models import Order
 from orders.serializers import OrderSerializer
 from appointments.models import Appointment
 from appointments.serializers import AppointmentSerializer
+from authentication.models import User
+from ai.models import AIUsageLog
 from .permissions import AdminAPIView
 
 logger = logging.getLogger('vitalhub')
@@ -190,3 +192,74 @@ class AdminAppointmentDetailView(AdminAPIView, APIView):
         appt.save()
         logger.info('Admin %s updated appointment id=%s: %s → %s', request.user.email, appt_id, old_status, new_status)
         return Response({'success': True, 'appointment': AppointmentSerializer(appt).data})
+
+
+class AdminUserListView(AdminAPIView, APIView):
+    """GET /api/admin/users/ — list all registered accounts.
+
+    Deliberately never sends password hashes to the browser at all — even a
+    hashed password has no legitimate use in a rendered admin table and only
+    adds risk if it ever leaked from the frontend. A masked placeholder is
+    shown client-side instead.
+    """
+
+    def get(self, request):
+        page  = int(request.query_params.get('page', 1))
+        users = User.objects.all().order_by('-created_at')
+
+        start = (page - 1) * PAGE_SIZE
+        end   = start + PAGE_SIZE
+        total = users.count()
+
+        data = [{
+            'id':         u.id,
+            'name':       u.name,
+            'email':      u.email,
+            'role':       u.role,
+            'is_active':  u.is_active,
+            'created_at': u.created_at,
+        } for u in users[start:end]]
+
+        return Response({
+            'success': True,
+            'total':   total,
+            'page':    page,
+            'pages':   math.ceil(total / PAGE_SIZE) if total else 1,
+            'users':   data,
+        })
+
+
+class AdminUserActivityView(AdminAPIView, APIView):
+    """GET /api/admin/users/<id>/activity/ — a single user's AI feature usage
+    history (nutrition plans generated, X-ray scans, report scans) plus their
+    current quota status, for the admin monitoring dashboard."""
+
+    def get(self, request, user_id):
+        try:
+            target = User.objects.get(pk=user_id)
+        except User.DoesNotExist:
+            return Response({'success': False, 'message': 'User not found'}, status=404)
+
+        from ai.services import UsageQuotaService
+
+        logs = AIUsageLog.objects.filter(user=target).order_by('-created_at')[:100]
+
+        quota_status = {
+            action: UsageQuotaService.remaining(target, action)
+            for action in UsageQuotaService.WEEKLY_LIMITS
+        }
+
+        return Response({
+            'success': True,
+            'user': {
+                'id': target.id, 'name': target.name, 'email': target.email,
+                'role': target.role, 'created_at': target.created_at,
+            },
+            'quota_remaining': quota_status,  # None = unlimited (admin)
+            'activity': [{
+                'action_type': log.action_type,
+                'action_label': log.get_action_type_display(),
+                'detail':       log.detail,
+                'created_at':   log.created_at,
+            } for log in logs],
+        })

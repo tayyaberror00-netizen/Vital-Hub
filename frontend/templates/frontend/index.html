@@ -9,10 +9,63 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="{% static 'frontend/CSS/style.css' %}">
+    <link rel="stylesheet" href="{% static 'frontend/CSS/spartan-motion.css' %}">
     <style>
         /* ── FAQ category tags ── */
         .faq-tag { cursor:pointer; transition:all 0.2s ease; }
         .faq-tag.active-tag { background:#2563eb; color:#fff; }
+
+        /* Progressive accordion — smooth expand/collapse, not an instant
+           snap, using the same spring easing as the rest of the site. */
+        .faq-answer {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: max-height 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+                        opacity 0.4s ease;
+        }
+        .faq-item.active .faq-answer {
+            max-height: 400px;
+            opacity: 1;
+        }
+        .faq-item.active {
+            border-color: #bfdbfe;
+            box-shadow: 0 8px 24px -8px rgba(37, 99, 235, 0.12);
+        }
+        .faq-icon {
+            transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .faq-item.active .faq-icon {
+            transform: rotate(180deg);
+        }
+
+        /* Continuous band-roller marquee — content is duplicated in the
+           markup (2 identical copies back to back), so translateX(-50%)
+           loops seamlessly with zero jump/reset visible. */
+        .ticker-wrap {
+            overflow: hidden;
+            width: 100%;
+            -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+            mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+        }
+        .ticker-track {
+            display: flex;
+            align-items: center;
+            width: max-content;
+            animation: spartan-ticker 32s linear infinite;
+            will-change: transform;
+        }
+        /* Pause on hover so a curious visitor can actually read a name. */
+        .ticker-wrap:hover .ticker-track {
+            animation-play-state: paused;
+        }
+        @keyframes spartan-ticker {
+            from { transform: translateX(0); }
+            to   { transform: translateX(-50%); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .ticker-track { animation: none; }
+        }
 
         /* ── Mobile nav ── */
         #mobile-nav { transition: opacity 0.3s ease, transform 0.3s ease; }
@@ -73,18 +126,18 @@
 
     <!-- ═══════════ HERO ═══════════ -->
     <section class="max-w-7xl mx-auto px-6 lg:px-12 py-12 lg:py-20 flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
-        <div class="flex-1 space-y-6 lg:space-y-8 text-center lg:text-left">
+        <div class="flex-1 space-y-6 lg:space-y-8 text-center lg:text-left spartan-reveal-left">
             <div class="hero-badge bg-emerald-50 text-emerald-600 px-4 py-1.5 rounded-full text-[9px] lg:text-[10px] font-black tracking-widest uppercase inline-flex items-center gap-2">
                 <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span> The Future of Healthcare
             </div>
-            <h1 class="hero-h1 text-5xl lg:text-8xl font-black leading-[0.9] text-slate-900 tracking-tighter">
+            <h1 class="hero-h1 text-5xl lg:text-8xl font-black leading-[0.9] text-slate-900 tracking-tighter spartan-text-reveal">
                 Your Health, <br> <span class="text-blue-600">Reimagined.</span>
             </h1>
             <p class="hero-p text-slate-400 text-base lg:text-lg leading-relaxed max-w-lg mx-auto lg:mx-0 font-medium">
                 Experience the next generation of medical e-commerce. AI-powered diagnostics, AR product visualization, and personalized care.
             </p>
             <div class="hero-btns flex flex-col sm:flex-row gap-4 pt-4 justify-center lg:justify-start">
-                <a href="auth.html" class="btn-shimmer bg-blue-600 text-white px-10 py-5 rounded-xl font-black shadow-2xl shadow-blue-200 hover:-translate-y-1 hover:shadow-blue-300 transition-all duration-300 text-center">
+                <a href="auth.html" id="hero-cta-btn" class="btn-shimmer bg-blue-600 text-white px-10 py-5 rounded-xl font-black shadow-2xl shadow-blue-200 hover:-translate-y-1 hover:shadow-blue-300 transition-all duration-300 text-center">
                     Get Started
                 </a>
                 <a href="store.html" class="bg-white border-2 border-slate-100 text-slate-900 px-10 py-5 rounded-xl font-black hover:bg-slate-50 hover:border-slate-200 hover:-translate-y-1 transition-all duration-300 text-center">
@@ -92,7 +145,7 @@
                 </a>
             </div>
         </div>
-        <div class="hero-image flex-1 relative w-full">
+        <div class="hero-image flex-1 relative w-full spartan-reveal-right">
             <div class="absolute -inset-4 bg-blue-50 rounded-[60px] blur-3xl opacity-50 -z-10"></div>
             <img src="{% static 'frontend/images/welcome.avif' %}" alt="Vital Hub — AI-powered healthcare platform"
                 class="hero-float rounded-[30px] lg:rounded-[50px] shadow-2xl border-4 lg:border-8 border-white object-cover aspect-[4/3] w-full">
@@ -100,17 +153,19 @@
     </section>
 
     <!-- ═══════════ PARTNERS TICKER ═══════════ -->
-    <section class="py-12 bg-white border-y border-slate-50 reveal">
+    <section class="py-12 bg-white border-y border-slate-50 spartan-section-reveal">
         <div class="max-w-7xl mx-auto px-6 lg:px-12">
             <p class="text-center text-[10px] font-black uppercase tracking-[0.3em] text-slate-300 mb-8">Our Clinical Partners</p>
             <div class="ticker-wrap">
                 <div class="ticker-track gap-16 lg:gap-24 opacity-40">
+                    <span class="font-black text-xl lg:text-2xl text-slate-900 tracking-tighter mx-8">AI</span>
                     <span class="font-black text-xl lg:text-2xl text-slate-900 tracking-tighter mx-8">HEALTH-LINE</span>
                     <span class="font-black text-xl lg:text-2xl text-slate-900 tracking-tighter mx-8">MED-CORE</span>
                     <span class="font-black text-xl lg:text-2xl text-slate-900 tracking-tighter mx-8">VITAL-SYNC</span>
                     <span class="font-black text-xl lg:text-2xl text-slate-900 tracking-tighter mx-8">NEURO-LABS</span>
                     <span class="font-black text-xl lg:text-2xl text-slate-900 tracking-tighter mx-8">BIO-REACH</span>
                     <span class="font-black text-xl lg:text-2xl text-slate-900 tracking-tighter mx-8">CLINIC-AI</span>
+                    <span class="font-black text-xl lg:text-2xl text-slate-900 tracking-tighter mx-8">AI</span>
                     <span class="font-black text-xl lg:text-2xl text-slate-900 tracking-tighter mx-8">HEALTH-LINE</span>
                     <span class="font-black text-xl lg:text-2xl text-slate-900 tracking-tighter mx-8">MED-CORE</span>
                     <span class="font-black text-xl lg:text-2xl text-slate-900 tracking-tighter mx-8">VITAL-SYNC</span>
@@ -123,23 +178,23 @@
     </section>
 
     <!-- ═══════════ VISION ═══════════ -->
-    <section class="py-16 lg:py-24 bg-slate-900 text-white overflow-hidden relative reveal" data-stats-section>
+    <section class="py-16 lg:py-24 bg-slate-900 text-white overflow-hidden relative spartan-section-reveal" data-stats-section>
         <div class="max-w-7xl mx-auto px-6 lg:px-12 relative z-10">
             <div class="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
                 <div class="text-center lg:text-left">
                     <h4 class="text-blue-500 font-black uppercase tracking-[0.3em] text-xs mb-6">Our Core Vision</h4>
-                    <h2 class="text-4xl lg:text-5xl font-black mb-8 leading-tight tracking-tighter">Bridging the gap between <span class="text-blue-400">technology</span> and <span class="text-emerald-400">humanity</span>.</h2>
-                    <p class="text-slate-400 text-lg leading-relaxed mb-8">Vital Hub isn't just a store; it's a lifelong health partner. We believe medical precision should be accessible from your living room.</p>
+                    <h2 class="text-4xl lg:text-5xl font-black mb-8 leading-tight tracking-tighter spartan-text-reveal">Bridging the gap between <span class="text-blue-400">technology</span> and <span class="text-emerald-400">humanity</span>.</h2>
+                    <p class="text-slate-400 text-lg leading-relaxed mb-8 spartan-text-reveal">Vital Hub isn't just a store; it's a lifelong health partner. We believe medical precision should be accessible from your living room.</p>
                     <div class="flex flex-wrap justify-center lg:justify-start gap-8 lg:gap-12">
-                        <div>
+                        <div class="spartan-reveal spartan-reveal-delay-1">
                             <p class="stat-number text-2xl lg:text-3xl font-black text-white" data-target="99.8" data-suffix="%">99.8%</p>
                             <p class="text-slate-500 text-[10px] uppercase font-bold tracking-widest mt-2">AI Accuracy</p>
                         </div>
-                        <div>
+                        <div class="spartan-reveal spartan-reveal-delay-2">
                             <p class="text-2xl lg:text-3xl font-black text-white">24/7</p>
                             <p class="text-slate-500 text-[10px] uppercase font-bold tracking-widest mt-2">Clinical Support</p>
                         </div>
-                        <div>
+                        <div class="spartan-reveal spartan-reveal-delay-3">
                             <p class="stat-number text-2xl lg:text-3xl font-black text-white" data-target="100" data-suffix="+">100+</p>
                             <p class="text-slate-500 text-[10px] uppercase font-bold tracking-widest mt-2">Medical Brands</p>
                         </div>
@@ -154,70 +209,70 @@
     </section>
 
     <!-- ═══════════ SERVICES ═══════════ -->
-    <section class="py-16 lg:py-24 px-6 lg:px-12 bg-white reveal">
+    <section class="py-16 lg:py-24 px-6 lg:px-12 bg-white spartan-section-reveal">
         <div class="text-center max-w-2xl mx-auto mb-16 lg:mb-20 space-y-4">
-            <h2 class="text-3xl lg:text-4xl font-black tracking-tighter text-slate-900 uppercase">Ecosystem Services</h2>
+            <h2 class="text-3xl lg:text-4xl font-black tracking-tighter text-slate-900 uppercase spartan-text-reveal">Ecosystem Services</h2>
             <div class="h-1 w-20 bg-blue-600 mx-auto rounded-full"></div>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 max-w-7xl mx-auto reveal-stagger">
             <div class="service-card p-8 lg:p-10 border border-slate-100 rounded-[40px] hover:shadow-2xl hover:shadow-blue-50 hover:-translate-y-2 transition-all duration-300 group cursor-pointer" onclick="window.location.href='store.html'">
                 <div class="service-icon bg-blue-50 w-16 h-16 rounded-2xl flex items-center justify-center mb-8 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300"><i data-lucide="shopping-bag" size="28"></i></div>
                 <h4 class="text-xl font-black mb-4 text-slate-800">Smart Store</h4>
-                <p class="text-slate-400 text-sm leading-relaxed">Shop verified medical equipment with 3D previews and AR integration.</p>
+                <p class="text-slate-400 text-sm leading-relaxed spartan-text-reveal">Shop verified medical equipment with 3D previews and AR integration.</p>
             </div>
             <div class="service-card p-8 lg:p-10 border border-slate-100 rounded-[40px] hover:shadow-2xl hover:shadow-emerald-50 hover:-translate-y-2 transition-all duration-300 group cursor-pointer" onclick="window.location.href='nutrition.html'">
                 <div class="service-icon bg-emerald-50 w-16 h-16 rounded-2xl flex items-center justify-center mb-8 group-hover:bg-emerald-600 group-hover:text-white transition-all duration-300"><i data-lucide="brain-circuit" size="28"></i></div>
                 <h4 class="text-xl font-black mb-4 text-slate-800">Nutrition AI</h4>
-                <p class="text-slate-400 text-sm leading-relaxed">Personalized meal planning driven by your biological data and health goals.</p>
+                <p class="text-slate-400 text-sm leading-relaxed spartan-text-reveal">Personalized meal planning driven by your biological data and health goals.</p>
             </div>
             <div class="service-card p-8 lg:p-10 border border-slate-100 rounded-[40px] hover:shadow-2xl hover:shadow-purple-50 hover:-translate-y-2 transition-all duration-300 group cursor-pointer" onclick="window.location.href='xray.html'">
                 <div class="service-icon bg-purple-50 w-16 h-16 rounded-2xl flex items-center justify-center mb-8 group-hover:bg-purple-600 group-hover:text-white transition-all duration-300"><i data-lucide="microscope" size="28"></i></div>
                 <h4 class="text-xl font-black mb-4 text-slate-800">Remote Labs</h4>
-                <p class="text-slate-400 text-sm leading-relaxed">Upload scans for instant AI-assisted preliminary diagnostics.</p>
+                <p class="text-slate-400 text-sm leading-relaxed spartan-text-reveal">Upload scans for instant AI-assisted preliminary diagnostics.</p>
             </div>
             <div class="service-card p-8 lg:p-10 border border-slate-100 rounded-[40px] hover:shadow-2xl hover:shadow-rose-50 hover:-translate-y-2 transition-all duration-300 group cursor-pointer" onclick="window.location.href='appointment.html'">
                 <div class="service-icon bg-rose-50 w-16 h-16 rounded-2xl flex items-center justify-center mb-8 group-hover:bg-rose-600 group-hover:text-white transition-all duration-300"><i data-lucide="video" size="28"></i></div>
                 <h4 class="text-xl font-black mb-4 text-slate-800">Tele-Visits</h4>
-                <p class="text-slate-400 text-sm leading-relaxed">Book live consultations with certified medical specialists worldwide.</p>
+                <p class="text-slate-400 text-sm leading-relaxed spartan-text-reveal">Book live consultations with certified medical specialists worldwide.</p>
             </div>
         </div>
     </section>
 
     <!-- ═══════════ JOURNEY STEPS ═══════════ -->
-    <section class="py-16 lg:py-24 px-6 lg:px-12 bg-white reveal">
+    <section class="py-16 lg:py-24 px-6 lg:px-12 bg-white spartan-section-reveal">
         <div class="max-w-7xl mx-auto">
             <div class="text-center max-w-2xl mx-auto mb-16 lg:mb-20 space-y-4">
-                <h2 class="text-3xl lg:text-4xl font-black tracking-tighter text-slate-900 uppercase">The Vital Journey</h2>
+                <h2 class="text-3xl lg:text-4xl font-black tracking-tighter text-slate-900 uppercase spartan-text-reveal">The Vital Journey</h2>
                 <div class="h-1 w-20 bg-blue-600 mx-auto rounded-full"></div>
-                <p class="text-slate-400 font-medium px-4">Three simple steps to professional medical insights.</p>
+                <p class="text-slate-400 font-medium px-4 spartan-text-reveal">Three simple steps to professional medical insights.</p>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-12 lg:gap-16 reveal-stagger">
                 <div class="step-group space-y-4 group text-center md:text-left">
                     <span class="step-num text-5xl lg:text-6xl font-black text-blue-50 group-hover:text-blue-100 transition-colors">01</span>
                     <h4 class="text-xl font-black text-slate-900 uppercase tracking-tight">Upload Data</h4>
-                    <p class="text-slate-400 text-sm leading-relaxed">Sync your wearable devices or upload scans to our secure cloud.</p>
+                    <p class="text-slate-400 text-sm leading-relaxed spartan-text-reveal">Sync your wearable devices or upload scans to our secure cloud.</p>
                 </div>
                 <div class="step-group space-y-4 group text-center md:text-left">
                     <span class="step-num text-5xl lg:text-6xl font-black text-emerald-50 group-hover:text-emerald-100 transition-colors">02</span>
                     <h4 class="text-xl font-black text-slate-900 uppercase tracking-tight">AI Analysis</h4>
-                    <p class="text-slate-400 text-sm leading-relaxed">Our algorithms analyze your biological markers in real-time.</p>
+                    <p class="text-slate-400 text-sm leading-relaxed spartan-text-reveal">Our algorithms analyze your biological markers in real-time.</p>
                 </div>
                 <div class="step-group space-y-4 group text-center md:text-left">
                     <span class="step-num text-5xl lg:text-6xl font-black text-purple-50 group-hover:text-purple-100 transition-colors">03</span>
                     <h4 class="text-xl font-black text-slate-900 uppercase tracking-tight">Expert Review</h4>
-                    <p class="text-slate-400 text-sm leading-relaxed">Book a tele-visit to confirm findings and receive a personalised care plan.</p>
+                    <p class="text-slate-400 text-sm leading-relaxed spartan-text-reveal">Book a tele-visit to confirm findings and receive a personalised care plan.</p>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- ═══════════ PRODUCTS ═══════════ -->
-    <section class="py-16 lg:py-24 px-6 lg:px-12 bg-slate-50 reveal">
+    <section class="py-16 lg:py-24 px-6 lg:px-12 bg-slate-50 spartan-section-reveal">
         <div class="max-w-7xl mx-auto">
             <div class="flex flex-col md:flex-row justify-between items-center md:items-end mb-12 gap-6">
                 <div class="text-center md:text-left">
-                    <h2 class="text-3xl lg:text-4xl font-black mb-2 text-slate-900 tracking-tighter uppercase">Essential Gear</h2>
-                    <p class="text-slate-400 text-xs font-medium uppercase tracking-widest">Top Rated Monitoring Tools</p>
+                    <h2 class="text-3xl lg:text-4xl font-black mb-2 text-slate-900 tracking-tighter uppercase spartan-text-reveal">Essential Gear</h2>
+                    <p class="text-slate-400 text-xs font-medium uppercase tracking-widest spartan-text-reveal">Top Rated Monitoring Tools</p>
                 </div>
                 <a href="store.html" class="text-blue-600 font-black text-xs uppercase tracking-widest flex items-center gap-2 hover:gap-4 transition-all duration-300 group">
                     Explore Catalog <i data-lucide="arrow-right" size="16" class="group-hover:translate-x-1 transition-transform duration-300"></i>
@@ -270,13 +325,69 @@
         </div>
     </section>
 
+    <!-- ═══════════ CONTACT US ═══════════ -->
+    <section class="py-16 lg:py-24 px-6 lg:px-12 bg-slate-50 spartan-section-reveal">
+        <div class="max-w-5xl mx-auto">
+            <div class="text-center mb-12 lg:mb-16">
+                <div class="bg-emerald-50 text-emerald-600 px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest uppercase inline-block mb-4">Get In Touch</div>
+                <h2 class="text-3xl lg:text-4xl font-black tracking-tighter text-slate-900 mb-4 uppercase spartan-text-reveal">Contact Us</h2>
+                <p class="text-slate-400 font-medium spartan-text-reveal">Questions about a product, a diagnosis feature, or a partnership? We read every message.</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 lg:gap-12 items-start">
+                <div class="lg:col-span-2 space-y-6 spartan-reveal-left">
+                    <div class="flex items-start gap-4">
+                        <div class="bg-blue-600 p-3 rounded-2xl text-white shadow-lg shadow-blue-100 flex-shrink-0"><i data-lucide="mail" class="w-5 h-5"></i></div>
+                        <div>
+                            <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Email</p>
+                            <p class="font-bold text-slate-800">vitalhub52@gmail.com</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-4">
+                        <div class="bg-emerald-500 p-3 rounded-2xl text-white shadow-lg shadow-emerald-100 flex-shrink-0"><i data-lucide="clock" class="w-5 h-5"></i></div>
+                        <div>
+                            <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Response Time</p>
+                            <p class="font-bold text-slate-800">Usually within 24 hours</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-4">
+                        <div class="bg-slate-900 p-3 rounded-2xl text-white shadow-lg flex-shrink-0"><i data-lucide="shield-check" class="w-5 h-5"></i></div>
+                        <div>
+                            <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Privacy</p>
+                            <p class="font-bold text-slate-800">Your message is never shared with third parties.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <form id="contact-form" onsubmit="return handleContactSubmit(event)"
+                      class="lg:col-span-3 bg-white p-6 sm:p-8 rounded-[32px] border border-slate-100 shadow-sm spartan-card spartan-reveal-right space-y-4">
+                    <p id="contact-feedback" class="hidden text-xs font-bold rounded-xl p-3"></p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <input id="contact-name" type="text" required placeholder="Full Name"
+                               class="p-4 bg-slate-50 rounded-2xl border-2 border-transparent outline-none focus:border-blue-200 text-sm transition-all">
+                        <input id="contact-email" type="email" required placeholder="Email Address"
+                               class="p-4 bg-slate-50 rounded-2xl border-2 border-transparent outline-none focus:border-blue-200 text-sm transition-all">
+                    </div>
+                    <input id="contact-subject" type="text" placeholder="Subject (optional)"
+                           class="w-full p-4 bg-slate-50 rounded-2xl border-2 border-transparent outline-none focus:border-blue-200 text-sm transition-all">
+                    <textarea id="contact-message" required rows="5" placeholder="How can we help?"
+                              class="w-full p-4 bg-slate-50 rounded-2xl border-2 border-transparent outline-none focus:border-blue-200 text-sm transition-all resize-none"></textarea>
+                    <button type="submit" id="contact-submit-btn"
+                            class="btn-shimmer spartan-button w-full bg-blue-600 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-900 transition shadow-lg shadow-blue-100">
+                        Send Message
+                    </button>
+                </form>
+            </div>
+        </div>
+    </section>
+
     <!-- ═══════════ EXPANDED FAQ ═══════════ -->
-    <section class="py-16 lg:py-24 px-6 lg:px-12 bg-white reveal">
+    <section class="py-16 lg:py-24 px-6 lg:px-12 bg-white spartan-section-reveal">
         <div class="max-w-4xl mx-auto">
             <div class="text-center mb-12 lg:mb-16">
                 <div class="bg-blue-50 text-blue-600 px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest uppercase inline-block mb-4">Knowledge Base</div>
-                <h2 class="text-3xl lg:text-4xl font-black tracking-tighter text-slate-900 mb-4 uppercase">Patient FAQ</h2>
-                <p class="text-slate-400 font-medium">Common questions about the Vital Hub ecosystem.</p>
+                <h2 class="text-3xl lg:text-4xl font-black tracking-tighter text-slate-900 mb-4 uppercase spartan-text-reveal">Patient FAQ</h2>
+                <p class="text-slate-400 font-medium spartan-text-reveal">Common questions about the Vital Hub ecosystem.</p>
             </div>
 
             <!-- Category Filters -->
@@ -291,7 +402,7 @@
             <div class="space-y-4" id="faq-list">
 
                 <!-- Products FAQs -->
-                <div class="faq-item border border-slate-100 rounded-3xl p-6 cursor-pointer hover:border-blue-200 transition-all" data-cat="products" onclick="toggleFAQ(this)">
+                <div class="faq-item spartan-reveal spartan-reveal-delay-1 border border-slate-100 rounded-3xl p-6 cursor-pointer hover:border-blue-200 transition-all" data-cat="products" onclick="toggleFAQ(this)">
                     <div class="flex justify-between items-center">
                         <div class="flex items-center gap-3">
                             <span class="text-[8px] font-black bg-blue-50 text-blue-600 px-2 py-1 rounded-full uppercase tracking-wider">Products</span>
@@ -306,7 +417,7 @@
                     </div>
                 </div>
 
-                <div class="faq-item border border-slate-100 rounded-3xl p-6 cursor-pointer hover:border-blue-200 transition-all" data-cat="products" onclick="toggleFAQ(this)">
+                <div class="faq-item spartan-reveal spartan-reveal-delay-2 border border-slate-100 rounded-3xl p-6 cursor-pointer hover:border-blue-200 transition-all" data-cat="products" onclick="toggleFAQ(this)">
                     <div class="flex justify-between items-center">
                         <div class="flex items-center gap-3">
                             <span class="text-[8px] font-black bg-blue-50 text-blue-600 px-2 py-1 rounded-full uppercase tracking-wider">Products</span>
@@ -321,7 +432,7 @@
                     </div>
                 </div>
 
-                <div class="faq-item border border-slate-100 rounded-3xl p-6 cursor-pointer hover:border-blue-200 transition-all" data-cat="products" onclick="toggleFAQ(this)">
+                <div class="faq-item spartan-reveal spartan-reveal-delay-3 border border-slate-100 rounded-3xl p-6 cursor-pointer hover:border-blue-200 transition-all" data-cat="products" onclick="toggleFAQ(this)">
                     <div class="flex justify-between items-center">
                         <div class="flex items-center gap-3">
                             <span class="text-[8px] font-black bg-blue-50 text-blue-600 px-2 py-1 rounded-full uppercase tracking-wider">Products</span>
@@ -336,7 +447,7 @@
                     </div>
                 </div>
 
-                <div class="faq-item border border-slate-100 rounded-3xl p-6 cursor-pointer hover:border-blue-200 transition-all" data-cat="products" onclick="toggleFAQ(this)">
+                <div class="faq-item spartan-reveal spartan-reveal-delay-4 border border-slate-100 rounded-3xl p-6 cursor-pointer hover:border-blue-200 transition-all" data-cat="products" onclick="toggleFAQ(this)">
                     <div class="flex justify-between items-center">
                         <div class="flex items-center gap-3">
                             <span class="text-[8px] font-black bg-blue-50 text-blue-600 px-2 py-1 rounded-full uppercase tracking-wider">Products</span>
@@ -352,7 +463,7 @@
                 </div>
 
                 <!-- AI & Diagnostics FAQs -->
-                <div class="faq-item border border-slate-100 rounded-3xl p-6 cursor-pointer hover:border-blue-200 transition-all" data-cat="ai" onclick="toggleFAQ(this)">
+                <div class="faq-item spartan-reveal spartan-reveal-delay-5 border border-slate-100 rounded-3xl p-6 cursor-pointer hover:border-blue-200 transition-all" data-cat="ai" onclick="toggleFAQ(this)">
                     <div class="flex justify-between items-center">
                         <div class="flex items-center gap-3">
                             <span class="text-[8px] font-black bg-purple-50 text-purple-600 px-2 py-1 rounded-full uppercase tracking-wider">AI</span>
@@ -367,7 +478,7 @@
                     </div>
                 </div>
 
-                <div class="faq-item border border-slate-100 rounded-3xl p-6 cursor-pointer hover:border-blue-200 transition-all" data-cat="ai" onclick="toggleFAQ(this)">
+                <div class="faq-item spartan-reveal spartan-reveal-delay-6 border border-slate-100 rounded-3xl p-6 cursor-pointer hover:border-blue-200 transition-all" data-cat="ai" onclick="toggleFAQ(this)">
                     <div class="flex justify-between items-center">
                         <div class="flex items-center gap-3">
                             <span class="text-[8px] font-black bg-purple-50 text-purple-600 px-2 py-1 rounded-full uppercase tracking-wider">AI</span>
@@ -382,7 +493,7 @@
                     </div>
                 </div>
 
-                <div class="faq-item border border-slate-100 rounded-3xl p-6 cursor-pointer hover:border-blue-200 transition-all" data-cat="ai" onclick="toggleFAQ(this)">
+                <div class="faq-item spartan-reveal spartan-reveal-delay-1 border border-slate-100 rounded-3xl p-6 cursor-pointer hover:border-blue-200 transition-all" data-cat="ai" onclick="toggleFAQ(this)">
                     <div class="flex justify-between items-center">
                         <div class="flex items-center gap-3">
                             <span class="text-[8px] font-black bg-purple-50 text-purple-600 px-2 py-1 rounded-full uppercase tracking-wider">AI</span>
@@ -397,7 +508,7 @@
                     </div>
                 </div>
 
-                <div class="faq-item border border-slate-100 rounded-3xl p-6 cursor-pointer hover:border-blue-200 transition-all" data-cat="ai" onclick="toggleFAQ(this)">
+                <div class="faq-item spartan-reveal spartan-reveal-delay-2 border border-slate-100 rounded-3xl p-6 cursor-pointer hover:border-blue-200 transition-all" data-cat="ai" onclick="toggleFAQ(this)">
                     <div class="flex justify-between items-center">
                         <div class="flex items-center gap-3">
                             <span class="text-[8px] font-black bg-purple-50 text-purple-600 px-2 py-1 rounded-full uppercase tracking-wider">AI</span>
@@ -413,7 +524,7 @@
                 </div>
 
                 <!-- Orders & Shipping FAQs -->
-                <div class="faq-item border border-slate-100 rounded-3xl p-6 cursor-pointer hover:border-blue-200 transition-all" data-cat="orders" onclick="toggleFAQ(this)">
+                <div class="faq-item spartan-reveal spartan-reveal-delay-3 border border-slate-100 rounded-3xl p-6 cursor-pointer hover:border-blue-200 transition-all" data-cat="orders" onclick="toggleFAQ(this)">
                     <div class="flex justify-between items-center">
                         <div class="flex items-center gap-3">
                             <span class="text-[8px] font-black bg-emerald-50 text-emerald-600 px-2 py-1 rounded-full uppercase tracking-wider">Orders</span>
@@ -428,7 +539,7 @@
                     </div>
                 </div>
 
-                <div class="faq-item border border-slate-100 rounded-3xl p-6 cursor-pointer hover:border-blue-200 transition-all" data-cat="orders" onclick="toggleFAQ(this)">
+                <div class="faq-item spartan-reveal spartan-reveal-delay-4 border border-slate-100 rounded-3xl p-6 cursor-pointer hover:border-blue-200 transition-all" data-cat="orders" onclick="toggleFAQ(this)">
                     <div class="flex justify-between items-center">
                         <div class="flex items-center gap-3">
                             <span class="text-[8px] font-black bg-emerald-50 text-emerald-600 px-2 py-1 rounded-full uppercase tracking-wider">Orders</span>
@@ -443,7 +554,7 @@
                     </div>
                 </div>
 
-                <div class="faq-item border border-slate-100 rounded-3xl p-6 cursor-pointer hover:border-blue-200 transition-all" data-cat="orders" onclick="toggleFAQ(this)">
+                <div class="faq-item spartan-reveal spartan-reveal-delay-5 border border-slate-100 rounded-3xl p-6 cursor-pointer hover:border-blue-200 transition-all" data-cat="orders" onclick="toggleFAQ(this)">
                     <div class="flex justify-between items-center">
                         <div class="flex items-center gap-3">
                             <span class="text-[8px] font-black bg-emerald-50 text-emerald-600 px-2 py-1 rounded-full uppercase tracking-wider">Orders</span>
@@ -459,7 +570,7 @@
                 </div>
 
                 <!-- Account FAQs -->
-                <div class="faq-item border border-slate-100 rounded-3xl p-6 cursor-pointer hover:border-blue-200 transition-all" data-cat="account" onclick="toggleFAQ(this)">
+                <div class="faq-item spartan-reveal spartan-reveal-delay-6 border border-slate-100 rounded-3xl p-6 cursor-pointer hover:border-blue-200 transition-all" data-cat="account" onclick="toggleFAQ(this)">
                     <div class="flex justify-between items-center">
                         <div class="flex items-center gap-3">
                             <span class="text-[8px] font-black bg-rose-50 text-rose-600 px-2 py-1 rounded-full uppercase tracking-wider">Account</span>
@@ -474,7 +585,7 @@
                     </div>
                 </div>
 
-                <div class="faq-item border border-slate-100 rounded-3xl p-6 cursor-pointer hover:border-blue-200 transition-all" data-cat="account" onclick="toggleFAQ(this)">
+                <div class="faq-item spartan-reveal spartan-reveal-delay-1 border border-slate-100 rounded-3xl p-6 cursor-pointer hover:border-blue-200 transition-all" data-cat="account" onclick="toggleFAQ(this)">
                     <div class="flex justify-between items-center">
                         <div class="flex items-center gap-3">
                             <span class="text-[8px] font-black bg-rose-50 text-rose-600 px-2 py-1 rounded-full uppercase tracking-wider">Account</span>
@@ -489,7 +600,7 @@
                     </div>
                 </div>
 
-                <div class="faq-item border border-slate-100 rounded-3xl p-6 cursor-pointer hover:border-blue-200 transition-all" data-cat="account" onclick="toggleFAQ(this)">
+                <div class="faq-item spartan-reveal spartan-reveal-delay-2 border border-slate-100 rounded-3xl p-6 cursor-pointer hover:border-blue-200 transition-all" data-cat="account" onclick="toggleFAQ(this)">
                     <div class="flex justify-between items-center">
                         <div class="flex items-center gap-3">
                             <span class="text-[8px] font-black bg-rose-50 text-rose-600 px-2 py-1 rounded-full uppercase tracking-wider">Account</span>
@@ -512,7 +623,7 @@
                     <i data-lucide="message-circle-question" class="w-6 h-6"></i>
                 </div>
                 <h4 class="font-black text-slate-900 mb-2">Still have questions?</h4>
-                <p class="text-slate-400 text-sm mb-6">Our support team responds within 2 hours.</p>
+                <p class="text-slate-400 text-sm mb-6 spartan-text-reveal">Our support team responds within 2 hours.</p>
                 <div class="flex flex-col sm:flex-row gap-3 justify-center">
                     <button onclick="toggleAIHub()" class="btn-shimmer bg-blue-600 text-white px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-900 transition-all shadow-lg shadow-blue-100">
                         Ask AI Assistant
@@ -526,12 +637,12 @@
     </section>
 
     <!-- ═══════════ CTA ═══════════ -->
-    <section class="py-12 px-6 lg:px-12 reveal">
+    <section class="py-12 px-6 lg:px-12 spartan-section-reveal">
         <div class="max-w-7xl mx-auto bg-blue-600 rounded-[40px] lg:rounded-[60px] p-8 lg:p-16 flex flex-col lg:flex-row items-center justify-between gap-12 overflow-hidden relative">
             <div class="cta-glow absolute top-0 right-0 w-64 h-64 bg-white rounded-full -mr-32 -mt-32 blur-3xl pointer-events-none"></div>
             <div class="cta-glow absolute bottom-0 left-0 w-48 h-48 bg-blue-400 rounded-full -ml-24 -mb-24 blur-3xl pointer-events-none" style="animation-delay:2.5s"></div>
             <div class="relative z-10 space-y-6 lg:max-w-lg text-center lg:text-left">
-                <h2 class="text-4xl lg:text-5xl font-black text-white leading-tight tracking-tighter">Your health in your pocket.</h2>
+                <h2 class="text-4xl lg:text-5xl font-black text-white leading-tight tracking-tighter spartan-text-reveal">Your health in your pocket.</h2>
                 <p class="text-blue-100 text-base lg:text-lg px-4 lg:px-0">Get real-time alerts, sync with local clinics, and track your nutrition on the go.</p>
                 <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                     <button class="btn-shimmer bg-white text-blue-600 px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-900 hover:text-white transition-all duration-300">App Store</button>
@@ -545,14 +656,14 @@
     </section>
 
     <!-- ═══════════ STANDARD FOOTER ═══════════ -->
-    <footer class="bg-slate-50 border-t border-slate-100 py-16 lg:py-24 px-6 lg:px-12 reveal">
+    <footer class="bg-slate-50 border-t border-slate-100 py-16 lg:py-24 px-6 lg:px-12 spartan-section-reveal">
         <div class="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-16">
             <div class="space-y-6">
                 <div class="flex items-center gap-2">
                     <div class="bg-blue-600 p-2 rounded-xl text-white"><i data-lucide="activity"></i></div>
                     <span class="text-xl font-black uppercase tracking-tighter text-blue-900">Vital Hub</span>
                 </div>
-                <p class="text-slate-400 text-sm leading-relaxed font-medium">Your all-in-one healthcare portal for monitoring, diagnostics, and wellness.</p>
+                <p class="text-slate-400 text-sm leading-relaxed font-medium spartan-text-reveal">Your all-in-one healthcare portal for monitoring, diagnostics, and wellness.</p>
                 <div class="flex items-center gap-2 bg-white border border-slate-100 rounded-full px-3 py-2 w-fit">
                     <span class="relative flex h-2 w-2">
                         <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -601,7 +712,7 @@
             </div>
         </div>
         <div class="max-w-7xl mx-auto mt-12 pt-8 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4">
-            <p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest">© 2026 Vital Hub Healthcare Systems</p>
+            <p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest spartan-text-reveal">© 2026 Vital Hub Healthcare Systems</p>
             <div class="flex items-center gap-4">
                 <span class="flex items-center gap-1.5 text-slate-400 text-[10px] font-bold uppercase tracking-widest"><i data-lucide="lock" class="w-3 h-3"></i> Encrypted</span>
                 <span class="flex items-center gap-1.5 text-slate-400 text-[10px] font-bold uppercase tracking-widest"><i data-lucide="shield-check" class="w-3 h-3"></i> HIPAA Compliant</span>
@@ -611,6 +722,50 @@
     </footer>
 
     <script>
+        async function handleContactSubmit(evt) {
+            evt.preventDefault();
+            const btn = document.getElementById('contact-submit-btn');
+            const feedback = document.getElementById('contact-feedback');
+            feedback.classList.add('hidden', 'text-emerald-600', 'text-red-500', 'bg-emerald-50', 'bg-red-50');
+
+            const payload = {
+                name: document.getElementById('contact-name').value.trim(),
+                email: document.getElementById('contact-email').value.trim(),
+                subject: document.getElementById('contact-subject').value.trim(),
+                message: document.getElementById('contact-message').value.trim(),
+            };
+
+            if (!payload.name || !payload.email || !payload.message) {
+                feedback.textContent = 'Please fill in your name, email, and message.';
+                feedback.classList.remove('hidden');
+                feedback.classList.add('text-red-500', 'bg-red-50');
+                return false;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Sending...';
+            try {
+                const res = await fetch('/api/contact/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+                const data = await res.json();
+                feedback.textContent = data.message || (data.success ? 'Message sent!' : 'Something went wrong.');
+                feedback.classList.remove('hidden');
+                feedback.classList.add(data.success ? 'text-emerald-600' : 'text-red-500', data.success ? 'bg-emerald-50' : 'bg-red-50');
+                if (data.success) document.getElementById('contact-form').reset();
+            } catch (err) {
+                feedback.textContent = 'Network error — please try again.';
+                feedback.classList.remove('hidden');
+                feedback.classList.add('text-red-500', 'bg-red-50');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Send Message';
+            }
+            return false;
+        }
+
         async function handleNewsletterSubmit(evt) {
             evt.preventDefault();
             const input = document.getElementById('newsletter-email');
@@ -672,7 +827,7 @@
                         <p class="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Neural Core v2.0 Online</p>
                     </div>
                     <h3 class="text-xl font-black tracking-tighter">Vital Hub AI</h3>
-                    <p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1">Health Assistant</p>
+                    <p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1 spartan-text-reveal">Health Assistant</p>
                 </div>
                 <button onclick="toggleAIHub()" class="bg-white/10 p-2.5 rounded-xl hover:bg-white/20 transition-all hover:rotate-90 duration-300">
                     <i data-lucide="x" size="16"></i>
@@ -714,6 +869,7 @@
     <script src="{% static 'frontend/JS/products.js' %}"></script>
     <script src="{% static 'frontend/JS/script.js' %}"></script>
     <script src="{% static 'frontend/JS/ai-assistant.js' %}"></script>
+    <script src="{% static 'frontend/JS/spartan-motion.js' %}"></script>
     <script src="{% static 'frontend/JS/animations.js' %}"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {

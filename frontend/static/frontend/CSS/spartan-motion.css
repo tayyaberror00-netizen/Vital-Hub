@@ -1,0 +1,184 @@
+/* ══════════════════════════════════════════════════════════════════════
+   SPARTAN MOTION — Vital Hub global animation framework
+   Lightweight, hardware-accelerated, dependency-free.
+   Reuses the EXISTING brand palette (--primary-blue, --medical-emerald,
+   --dark-navy) from style.css — no new colors introduced.
+   ══════════════════════════════════════════════════════════════════════ */
+
+:root {
+    --spartan-ease: cubic-bezier(0.16, 1, 0.3, 1);      /* spring-like settle */
+    --spartan-ease-snap: cubic-bezier(0.34, 1.56, 0.64, 1); /* slight overshoot, for buttons/knobs */
+    --spartan-dur-fast: 0.25s;
+    --spartan-dur: 0.5s;
+    --spartan-dur-slow: 0.8s;
+
+    /* Glow/elevation colors derived from the existing palette — not new colors */
+    --spartan-glow: color-mix(in srgb, var(--primary-blue) 35%, transparent);
+    --spartan-glow-strong: color-mix(in srgb, var(--primary-blue) 55%, transparent);
+    --spartan-shadow-ambient: color-mix(in srgb, var(--dark-navy) 10%, transparent);
+}
+
+/* ── 1. GLOBAL SCROLL-DRIVEN REVEAL SYSTEM ─────────────────────────────── */
+
+.spartan-reveal {
+    opacity: 0;
+    transform: translateY(28px) scale(0.98) translateZ(0);
+    transition: opacity var(--spartan-dur-slow) var(--spartan-ease),
+                transform var(--spartan-dur-slow) var(--spartan-ease);
+    will-change: transform, opacity;
+}
+.spartan-reveal.is-in {
+    opacity: 1;
+    transform: translateY(0) scale(1) translateZ(0);
+}
+/* Once settled, drop will-change so the browser stops reserving a paint
+   layer for elements that are no longer animating (perf hygiene). */
+.spartan-reveal.is-in.is-settled {
+    will-change: auto;
+}
+
+/* Staggered delay steps — used on sibling elements inside a revealed
+   section (cards, list items, stat blocks) so they cascade in rather
+   than popping together. */
+.spartan-reveal-delay-1 { transition-delay: 0.08s; }
+.spartan-reveal-delay-2 { transition-delay: 0.16s; }
+.spartan-reveal-delay-3 { transition-delay: 0.24s; }
+.spartan-reveal-delay-4 { transition-delay: 0.32s; }
+.spartan-reveal-delay-5 { transition-delay: 0.40s; }
+.spartan-reveal-delay-6 { transition-delay: 0.48s; }
+
+/* Directional variants for elements that should slide in from a side
+   rather than rise (e.g. two-column layouts). */
+.spartan-reveal-left {
+    opacity: 0;
+    transform: translateX(-32px) translateZ(0);
+    transition: opacity var(--spartan-dur-slow) var(--spartan-ease),
+                transform var(--spartan-dur-slow) var(--spartan-ease);
+    will-change: transform, opacity;
+}
+.spartan-reveal-left.is-in { opacity: 1; transform: translateX(0) translateZ(0); }
+
+.spartan-reveal-right {
+    opacity: 0;
+    transform: translateX(32px) translateZ(0);
+    transition: opacity var(--spartan-dur-slow) var(--spartan-ease),
+                transform var(--spartan-dur-slow) var(--spartan-ease);
+    will-change: transform, opacity;
+}
+.spartan-reveal-right.is-in { opacity: 1; transform: translateX(0) translateZ(0); }
+
+
+/* ── 2. SPRING PHYSICS & HOVER INTERACTIONS ────────────────────────────── */
+/* All hover effects are scoped inside `@media (hover: hover) and
+   (pointer: fine)` — this targets real mouse/trackpad input specifically,
+   so touch devices never get a "stuck" hover state after a tap. */
+
+.spartan-card {
+    transition: transform var(--spartan-dur) var(--spartan-ease),
+                box-shadow var(--spartan-dur) var(--spartan-ease),
+                border-color var(--spartan-dur-fast) var(--spartan-ease);
+    will-change: transform, box-shadow;
+}
+@media (hover: hover) and (pointer: fine) {
+    .spartan-card:hover {
+        transform: translateY(-8px) scale(1.015) translateZ(0);
+        box-shadow:
+            0 2px 4px var(--spartan-shadow-ambient),
+            0 12px 24px -8px var(--spartan-shadow-ambient),
+            0 24px 48px -16px var(--spartan-glow);
+        border-color: var(--primary-blue);
+    }
+}
+
+.spartan-button {
+    position: relative;
+    transition: transform var(--spartan-dur-fast) var(--spartan-ease-snap),
+                box-shadow var(--spartan-dur-fast) var(--spartan-ease),
+                filter var(--spartan-dur-fast) var(--spartan-ease);
+    will-change: transform, box-shadow;
+}
+@media (hover: hover) and (pointer: fine) {
+    .spartan-button:hover {
+        transform: translateY(-3px) translateZ(0);
+        box-shadow: 0 8px 20px -6px var(--spartan-glow-strong);
+        filter: brightness(1.04);
+    }
+}
+.spartan-button:active {
+    transform: translateY(-1px) scale(0.97) translateZ(0);
+    transition-duration: 0.12s;
+}
+
+/* Glassmorphism hover — soft ambient glow + border brighten, for cards
+   already using a translucent/blurred background. */
+.spartan-glass-hover {
+    transition: border-color var(--spartan-dur-fast) var(--spartan-ease),
+                box-shadow var(--spartan-dur) var(--spartan-ease),
+                background-color var(--spartan-dur) var(--spartan-ease);
+    will-change: box-shadow, border-color;
+}
+@media (hover: hover) and (pointer: fine) {
+    .spartan-glass-hover:hover {
+        border-color: color-mix(in srgb, var(--primary-blue) 45%, transparent);
+        box-shadow: 0 0 0 1px var(--spartan-glow) inset,
+                    0 16px 40px -12px var(--spartan-glow);
+        background-color: color-mix(in srgb, var(--primary-blue) 4%, transparent);
+    }
+}
+
+/* Touch devices: no hover, just a quick tactile press-down instead. */
+@media (hover: none) {
+    .spartan-card:active,
+    .spartan-button:active,
+    .spartan-glass-hover:active {
+        transform: scale(0.98) translateZ(0);
+        transition-duration: 0.12s;
+    }
+}
+
+
+/* ── 3. SMOOTH PAGE-TO-PAGE NAVIGATION (native View Transitions) ──────── */
+/* Requires this rule on BOTH the departing and arriving page — since
+   this stylesheet loads on every page, that condition is satisfied
+   automatically site-wide. Unsupported browsers (Firefox, older Safari)
+   silently ignore this block and just navigate normally — no JS fallback
+   needed for the "it still works" case, only for a still-nice fade
+   fallback, handled below via spartan-motion.js's classic in-page fade. */
+@view-transition {
+    navigation: auto;
+}
+
+::view-transition-old(root) {
+    animation: spartan-fade-out var(--spartan-dur-fast) var(--spartan-ease) both;
+}
+::view-transition-new(root) {
+    animation: spartan-fade-in var(--spartan-dur) var(--spartan-ease) both;
+}
+@keyframes spartan-fade-out {
+    to { opacity: 0; transform: scale(0.99); }
+}
+@keyframes spartan-fade-in {
+    from { opacity: 0; transform: scale(1.01); }
+}
+
+
+/* ── 4. ACCESSIBILITY & PERFORMANCE GUARDRAILS ─────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+    .spartan-reveal,
+    .spartan-reveal-left,
+    .spartan-reveal-right,
+    .spartan-card,
+    .spartan-button,
+    .spartan-glass-hover {
+        transition: none !important;
+        animation: none !important;
+        transform: none !important;
+        opacity: 1 !important;
+        will-change: auto !important;
+    }
+    ::view-transition-old(root),
+    ::view-transition-new(root) {
+        animation: none !important;
+    }
+}

@@ -251,6 +251,7 @@ function updateHeaderAuth() {
     const user = Auth.getUser();
     const joinBtn = document.getElementById('join-now-btn');
     const mobileLink = document.getElementById('mobile-join-now-link');
+    const heroBtn = document.getElementById('hero-cta-btn');
 
     if (!user) {
         return; // not logged in — leave the default "Join Now" CTA as-is
@@ -313,6 +314,11 @@ function updateHeaderAuth() {
     if (mobileLink) {
         mobileLink.textContent = dashboardLabel;
         mobileLink.href = dashboardHref;
+    }
+
+    if (heroBtn) {
+        heroBtn.href = isAdmin ? '/admin-panel/' : 'store.html';
+        heroBtn.textContent = isAdmin ? 'Open Admin Console' : 'Browse the Store';
     }
 }
 

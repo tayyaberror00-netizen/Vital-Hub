@@ -1,0 +1,151 @@
+{% extends 'adminpanel/base.html' %}
+{% block title %}Users{% endblock %}
+{% block nav_users %}active{% endblock %}
+{% block page_title %}Users{% endblock %}
+{% block page_subtitle %}Registered accounts, roles, and AI feature activity{% endblock %}
+
+{% block content %}
+<div class="flex flex-wrap gap-3 mb-6 items-center justify-between">
+    <div id="users-count" class="text-sm text-slate-400 font-medium"></div>
+</div>
+
+<div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="bg-slate-50 text-left">
+                    <th class="px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-400">#</th>
+                    <th class="px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-400">Name</th>
+                    <th class="px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-400">Email</th>
+                    <th class="px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-400">Role</th>
+                    <th class="px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-400">Joined</th>
+                    <th class="px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-400">Password</th>
+                    <th class="px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-400">Activity</th>
+                </tr>
+            </thead>
+            <tbody id="users-body">
+                <tr><td colspan="7" class="px-5 py-10 text-center text-slate-400">Loading…</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <div id="users-pagination" class="pagination-bar"></div>
+</div>
+
+<!-- Activity / quota drill-down modal -->
+<div id="activity-modal" class="hidden fixed inset-0 bg-slate-900/50 z-[300] flex items-center justify-center p-6">
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+        <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+            <div>
+                <h3 id="activity-user-name" class="font-black text-slate-900 text-lg"></h3>
+                <p id="activity-user-email" class="text-xs text-slate-400 font-bold"></p>
+            </div>
+            <button onclick="closeActivityModal()" class="text-slate-400 hover:text-slate-900 transition-colors">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        <div class="p-6 grid grid-cols-3 gap-3 border-b border-slate-100" id="quota-strip"></div>
+        <div class="p-6 overflow-y-auto flex-1">
+            <h4 class="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Recent Activity</h4>
+            <div id="activity-list" class="space-y-2"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let usersPage = 1;
+
+function goToUsersPage(n) { usersPage = n; loadUsers(); }
+
+async function loadUsers() {
+    const params = new URLSearchParams();
+    params.set('page', usersPage);
+
+    const res = await adminFetch('/api/admin/users/?' + params);
+    const tbody = document.getElementById('users-body');
+    const count = document.getElementById('users-count');
+
+    if (!res.success) return;
+    const users = res.users || [];
+
+    count.textContent = `${res.total} registered user(s)`;
+    renderPagination('users-pagination', res.page, res.pages, res.total, 'goToUsersPage');
+
+    if (!users.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="px-5 py-10 text-center text-slate-400">No users found</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = users.map(u => `
+        <tr class="table-row">
+            <td class="px-5 py-4 font-bold text-slate-500">#${u.id}</td>
+            <td class="px-5 py-4 font-semibold text-slate-700">${u.name || '—'}</td>
+            <td class="px-5 py-4 text-slate-500">${u.email}</td>
+            <td class="px-5 py-4">
+                <span class="badge ${u.role === 'admin' ? 'bg-slate-900 text-white' : 'bg-blue-50 text-blue-700'} capitalize">${u.role}</span>
+            </td>
+            <td class="px-5 py-4 text-xs text-slate-400">${new Date(u.created_at).toLocaleDateString()}</td>
+            <td class="px-5 py-4 text-xs font-mono text-slate-300">••••••••</td>
+            <td class="px-5 py-4">
+                <button onclick="openActivityModal(${u.id})" class="btn-success">View Activity</button>
+            </td>
+        </tr>
+    `).join('');
+    lucide.createIcons();
+}
+
+const ACTION_LABELS = {
+    nutrition_plan: 'Nutrition Plans',
+    xray_scan:      'X-Ray Scans',
+    report_scan:    'Report Scans',
+};
+
+async function openActivityModal(userId) {
+    const res = await adminFetch(`/api/admin/users/${userId}/activity/`);
+    if (!res.success) {
+        showToast(res.message || 'Could not load activity', 'error');
+        return;
+    }
+
+    document.getElementById('activity-user-name').textContent = res.user.name;
+    document.getElementById('activity-user-email').textContent = res.user.email;
+
+    const quotaStrip = document.getElementById('quota-strip');
+    quotaStrip.innerHTML = Object.entries(res.quota_remaining).map(([action, remaining]) => `
+        <div class="bg-slate-50 rounded-xl p-3 text-center">
+            <div class="text-lg font-black ${remaining === null ? 'text-emerald-600' : 'text-slate-700'}">
+                ${remaining === null ? '∞' : remaining}
+            </div>
+            <div class="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-1">
+                ${ACTION_LABELS[action] || action} left
+            </div>
+        </div>
+    `).join('');
+
+    const list = document.getElementById('activity-list');
+    if (!res.activity.length) {
+        list.innerHTML = '<p class="text-sm text-slate-400 text-center py-6">No activity yet.</p>';
+    } else {
+        list.innerHTML = res.activity.map(a => `
+            <div class="flex items-center justify-between bg-slate-50 rounded-xl px-4 py-3">
+                <div>
+                    <div class="text-sm font-bold text-slate-700">${a.action_label}</div>
+                    ${a.detail ? `<div class="text-xs text-slate-400">${a.detail}</div>` : ''}
+                </div>
+                <div class="text-xs text-slate-400 font-medium">${new Date(a.created_at).toLocaleString()}</div>
+            </div>
+        `).join('');
+    }
+
+    document.getElementById('activity-modal').classList.remove('hidden');
+    lucide.createIcons();
+}
+
+function closeActivityModal() {
+    document.getElementById('activity-modal').classList.add('hidden');
+}
+
+loadUsers();
+</script>
+{% endblock %}

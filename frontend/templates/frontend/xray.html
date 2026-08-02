@@ -1,5 +1,13 @@
 <!DOCTYPE html>
 {% load static %}
+<script>
+    // Protected page — bounce anonymous visitors to sign-up before anything
+    // renders (server-side enforcement lives on the API endpoints; this is
+    // the UX layer so they never even see the page first).
+    if (!localStorage.getItem('vh_token')) {
+        window.location.replace('/auth.html?next=' + encodeURIComponent(window.location.pathname));
+    }
+</script>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -9,6 +17,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="{% static 'frontend/CSS/style.css' %}">
+    <link rel="stylesheet" href="{% static 'frontend/CSS/spartan-motion.css' %}">
     <style>
         /* Upload zone hover glow */
         #upload-zone label {
@@ -105,7 +114,7 @@
     </div>
 
     <main class="max-w-6xl mx-auto py-12 lg:py-20 px-6">
-        <div class="mb-10 bg-blue-600/10 border border-blue-500/20 p-5 rounded-[25px] flex flex-col md:flex-row items-center gap-5 reveal">
+        <div class="mb-10 bg-blue-600/10 border border-blue-500/20 p-5 rounded-[25px] flex flex-col md:flex-row items-center gap-5 spartan-reveal">
             <div class="bg-blue-600 p-3 rounded-2xl shadow-lg shadow-blue-500/20">
                 <i data-lucide="shield-check" class="text-white"></i>
             </div>
@@ -118,7 +127,7 @@
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div class="space-y-6 reveal-left">
+            <div class="space-y-6 spartan-reveal-left">
                 <div id="scanner-container" class="relative bg-[#161C2C] rounded-[40px] border border-white/5 p-4 lg:p-6 shadow-2xl overflow-hidden min-h-[500px] flex flex-col items-center justify-center">
                     <div class="absolute inset-0 medical-grid opacity-10 pointer-events-none"></div>
                     <div id="scan-animation" class="hidden scan-line"></div>
@@ -159,7 +168,7 @@
                 </button>
             </div>
 
-            <div class="bg-[#161C2C] rounded-[40px] border border-white/5 p-8 lg:p-10 flex flex-col shadow-2xl reveal-right">
+            <div class="bg-[#161C2C] rounded-[40px] border border-white/5 p-8 lg:p-10 flex flex-col shadow-2xl spartan-reveal-right spartan-glass-hover">
                 <div class="flex items-center justify-between mb-10">
                     <h3 class="text-[11px] font-black text-blue-400 uppercase tracking-[0.3em]">Analysis Engine v2.4</h3>
                     <div id="status-indicator" class="flex items-center gap-2">
@@ -289,6 +298,7 @@
     <script src="{% static 'frontend/JS/products.js' %}"></script>
     <script src="{% static 'frontend/JS/script.js' %}"></script>
     <script src="{% static 'frontend/JS/ai-assistant.js' %}"></script>
+    <script src="{% static 'frontend/JS/spartan-motion.js' %}"></script>
     <script src="{% static 'frontend/JS/animations.js' %}"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -411,7 +421,11 @@
             formData.append('image', activeXrayFile);
 
             try {
-                const res = await fetch('/api/ai/xray/', { method: 'POST', body: formData });
+                const res = await fetch('/api/ai/xray/', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + Auth.getToken() },
+                    body: formData
+                });
                 const data = await res.json();
                 if (!res.ok || !data.success) throw new Error(data.message || 'Analysis failed.');
 

@@ -29,6 +29,7 @@ class NutritionPlanSerializer(serializers.Serializer):
     calories   = serializers.IntegerField()
     diseases   = serializers.ListField(child=serializers.CharField(), required=False, default=list)
     halal      = serializers.BooleanField(required=False, default=False)
+    budget     = serializers.BooleanField(required=False, default=False)
     exclusions = serializers.ListField(child=serializers.CharField(), required=False, default=list)
     location   = serializers.CharField(required=False, default='Pakistan', allow_blank=True)
     report_context = serializers.CharField(required=False, allow_blank=True, default='')
@@ -36,3 +37,4 @@ class NutritionPlanSerializer(serializers.Serializer):
 
 class GroceryListSerializer(serializers.Serializer):
     week_plan = serializers.ListField(child=serializers.DictField())
+    budget    = serializers.BooleanField(required=False, default=False)

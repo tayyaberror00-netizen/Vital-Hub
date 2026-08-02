@@ -62,6 +62,31 @@ class LoginView(APIView):
         return Response({'success': True, 'token': token, 'user': UserSerializer(user).data})
 
 
+class GoogleLoginView(APIView):
+    throttle_classes = [LoginRateThrottle]
+
+    def post(self, request):
+        id_token_str = request.data.get('credential', '')
+        if not id_token_str:
+            return Response({'success': False, 'message': 'Missing Google credential.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user, token = AuthService.google_login(id_token_str)
+        except Exception as e:
+            logger.warning('Google login failed: %s', e)
+            return Response({'success': False, 'message': str(e) or 'Google sign-in failed.'},
+                            status=status.HTTP_401_UNAUTHORIZED)
+
+        if user.role == 'admin':
+            request.session['vh_is_admin'] = True
+            request.session['vh_user_id']  = user.pk
+        else:
+            request.session.flush()
+
+        return Response({'success': True, 'token': token, 'user': UserSerializer(user).data})
+
+
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
 

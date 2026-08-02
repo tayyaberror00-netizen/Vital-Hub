@@ -1,28 +1,141 @@
+import base64
 import json
 
 from django.conf import settings
 
 
-# ── Gemini client helper (free-tier friendly) ─────────────────────────────────
-# Uses the current `google-genai` SDK. The old `google-generativeai` package
-# is fully deprecated and its models (gemini-2.0-flash) were shut down
-# June 1, 2026 — this is the actively maintained replacement.
-# Free-tier model as of mid-2026: gemini-2.5-flash.
+# ── LLM client helper — OpenRouter (provider-agnostic gateway) ───────────────
+# We deliberately do NOT call Google's Gemini API directly anymore. Gemini's
+# native SDK/auth (google-genai) hit an unresolved, Google-side rollout bug in
+# mid-2026 where newly issued API keys ("AQ." prefix) are rejected outright
+# with 401 UNAUTHENTICATED, regardless of correct code — see:
+# https://discuss.ai.google.dev/t/aq-key-401-access-token-type-unsupported-fully-configured-key-still-rejected-project-gen-lang-client-0867379035/172852
+#
+# OpenRouter (https://openrouter.ai) sits in front of 300+ models from every
+# major provider through ONE stable API key and ONE OpenAI-compatible
+# interface. If a specific free model ever gets delisted or rate-limited,
+# you only need to change LLM_MODEL / LLM_MODEL_FALLBACKS below — no code,
+# no SDK, no auth changes required. That's the actual fix for the class of
+# problem we just hit, not just a one-time patch.
 
-GEMINI_MODEL = 'gemini-flash-latest'
+# Primary model: free, vision-capable (needed for X-ray + report analyzer),
+# large context. Fallbacks are tried automatically if the primary is
+# unavailable/delisted/rate-limited. Update this list any time OpenRouter's
+# free roster changes — check https://openrouter.ai/models?max_price=0
+LLM_MODEL = getattr(settings, 'OPENROUTER_MODEL', 'google/gemma-4-31b-it:free')
+LLM_MODEL_FALLBACKS = [
+    'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free',
+    'meta-llama/llama-3.3-70b-instruct:free',
+]
 
 
-def _gemini_client():
-    api_key = getattr(settings, 'GEMINI_API_KEY', '')
+def _llm_client():
+    api_key = getattr(settings, 'OPENROUTER_API_KEY', '')
     if not api_key:
-        raise ValueError("GEMINI_API_KEY is not configured. Add it to your .env file.")
-    from google import genai
-    return genai.Client(api_key=api_key)
+        raise ValueError("OPENROUTER_API_KEY is not configured. Add it to your .env file.")
+    from openai import OpenAI
+    return OpenAI(base_url='https://openrouter.ai/api/v1', api_key=api_key)
+
+
+def _chat_complete(messages, json_mode: bool = False, max_tokens: int = 1000,
+                    temperature: float = 0.7) -> str:
+    """Send a chat completion, trying the primary model then falling back
+    through LLM_MODEL_FALLBACKS if the primary is unavailable/delisted."""
+    client = _llm_client()
+    last_error = None
+    for model in [LLM_MODEL] + LLM_MODEL_FALLBACKS:
+        try:
+            kwargs = {
+                'model': model,
+                'messages': messages,
+                'max_tokens': max_tokens,
+                'temperature': temperature,
+            }
+            if json_mode:
+                kwargs['response_format'] = {'type': 'json_object'}
+            response = client.chat.completions.create(**kwargs)
+            return response.choices[0].message.content
+        except Exception as e:
+            last_error = e
+            continue
+    raise last_error
+
+
+def _image_data_url(image_bytes: bytes, content_type: str) -> str:
+    b64 = base64.b64encode(image_bytes).decode('utf-8')
+    return f"data:{content_type};base64,{b64}"
+
+
+class QuotaExceededError(Exception):
+    """Raised when a normal user hits their weekly usage cap for an AI feature."""
+    def __init__(self, action_type, limit):
+        self.action_type = action_type
+        self.limit = limit
+        super().__init__(f"Weekly limit of {limit} reached for {action_type}.")
+
+
+class UsageQuotaService:
+    """Enforces per-user weekly quotas on AI features. Admins are exempt
+    entirely — usage is still logged for the admin activity dashboard, just
+    never blocked."""
+
+    # Rolling 7-day caps for normal ('user' role) accounts. Tune freely —
+    # this is the single source of truth for every limit in the app.
+    WEEKLY_LIMITS = {
+        'nutrition_plan': 3,
+        'xray_scan':       5,
+        'report_scan':     5,
+    }
+
+    @staticmethod
+    def check(user, action_type: str):
+        """Call BEFORE running the actual AI generation. Raises
+        QuotaExceededError if a normal user is already at/over their weekly
+        limit. Does NOT log anything — call log_usage() only after the
+        generation actually succeeds, so a failed AI call never burns quota."""
+        if user.role == 'admin':
+            return
+        limit = UsageQuotaService.WEEKLY_LIMITS.get(action_type)
+        if limit is None:
+            return
+        from django.utils import timezone
+        from datetime import timedelta
+        from .models import AIUsageLog
+        window_start = timezone.now() - timedelta(days=7)
+        count = AIUsageLog.objects.filter(
+            user=user, action_type=action_type, created_at__gte=window_start,
+        ).count()
+        if count >= limit:
+            raise QuotaExceededError(action_type, limit)
+
+    @staticmethod
+    def log_usage(user, action_type: str, detail: str = ''):
+        """Call AFTER a successful generation (for both normal users and
+        admins — admins are exempt from limits but still show up in the
+        admin activity dashboard)."""
+        from .models import AIUsageLog
+        AIUsageLog.objects.create(user=user, action_type=action_type, detail=detail[:255])
+
+    @staticmethod
+    def remaining(user, action_type: str):
+        """Returns None for admins (unlimited) or an int for normal users."""
+        from django.utils import timezone
+        from datetime import timedelta
+        from .models import AIUsageLog
+
+        if user.role == 'admin':
+            return None
+        limit = UsageQuotaService.WEEKLY_LIMITS.get(action_type, 0)
+        window_start = timezone.now() - timedelta(days=7)
+        used = AIUsageLog.objects.filter(
+            user=user, action_type=action_type, created_at__gte=window_start,
+        ).count()
+        return max(0, limit - used)
 
 
 def _extract_json(raw: str) -> dict:
-    """Gemini sometimes wraps JSON in markdown fences, adds stray text, or —
-    on very large structured responses — gets cut off mid-object if it runs
+    """Models sometimes wrap JSON in markdown fences, add stray text, or —
+    on very large structured responses — get cut off mid-object if they run
     out of output tokens. Handle all three cases before giving up."""
     raw = raw.strip()
     if raw.startswith('```'):
@@ -186,7 +299,6 @@ class NutritionService:
     def _ai_recommendation(age, weight, height, goal, gender, activity,
                            calories, protein, carbs, fat, bmi, bmi_status) -> str:
         try:
-            client = _gemini_client()
             prompt = (
                 f"You are a certified sports nutritionist. Patient profile:\n"
                 f"Age {age}, {gender}, {weight}kg, {height}cm, BMI {bmi} ({bmi_status}), "
@@ -198,8 +310,11 @@ class NutritionService:
                 f"3. One often-overlooked micronutrient or lifestyle factor for this goal.\n"
                 f"Clinical tone. No generic advice. 70 words max."
             )
-            response = client.models.generate_content(model=GEMINI_MODEL, contents=prompt)
-            return response.text.strip()
+            text = _chat_complete(
+                [{'role': 'user', 'content': prompt}],
+                max_tokens=220, temperature=0.7,
+            )
+            return text.strip()
         except Exception:
             return FALLBACK_RECOMMENDATIONS.get(goal, FALLBACK_RECOMMENDATIONS['maintain'])
 
@@ -242,21 +357,16 @@ class XrayService:
             content_type = 'image/jpeg'
 
         image_bytes = image_file.read()
+        data_url = _image_data_url(image_bytes, content_type)
 
-        from google.genai import types
-        client = _gemini_client()
-        response = client.models.generate_content(
-            model=GEMINI_MODEL,
-            contents=[
-                types.Part.from_bytes(data=image_bytes, mime_type=content_type),
-                XRAY_PROMPT,
+        text = _chat_complete([{
+            'role': 'user',
+            'content': [
+                {'type': 'text', 'text': XRAY_PROMPT},
+                {'type': 'image_url', 'image_url': {'url': data_url}},
             ],
-            config=types.GenerateContentConfig(
-                max_output_tokens=1200,
-                response_mime_type="application/json",
-            ),
-        )
-        return _extract_json(response.text)
+        }], json_mode=True, max_tokens=1200, temperature=0.4)
+        return _extract_json(text)
 
 
 # ── Consultation chat ──────────────────────────────────────────────────────────
@@ -276,19 +386,14 @@ class ConsultationService:
 
     @staticmethod
     def chat(message: str, history: list) -> str:
-        from google.genai import types
-        client = _gemini_client()
-
-        gemini_history = []
+        messages = [{'role': 'system', 'content': CONSULTATION_SYSTEM_PROMPT}]
         for turn in history[-10:]:
-            role = 'model' if turn.get('role') in ('ai', 'model', 'assistant') else 'user'
-            gemini_history.append(
-                types.Content(role=role, parts=[types.Part.from_text(text=turn.get('content', ''))])
-            )
+            role = 'assistant' if turn.get('role') in ('ai', 'model', 'assistant') else 'user'
+            messages.append({'role': role, 'content': turn.get('content', '')})
+        messages.append({'role': 'user', 'content': message})
 
-        chat = client.chats.create(model=GEMINI_MODEL, history=gemini_history)
-        response = chat.send_message(f"{CONSULTATION_SYSTEM_PROMPT}\n\nPatient: {message}")
-        return response.text.strip()
+        text = _chat_complete(messages, max_tokens=400, temperature=0.7)
+        return text.strip()
 
 
 # ── Nutrition weekly plan + grocery list ──────────────────────────────────────
@@ -311,11 +416,19 @@ class NutritionPlanService:
 
     @staticmethod
     def generate_week_plan(profile: dict) -> dict:
-        from google.genai import types
-
         halal_note = (
             "CRITICAL: Every meal must be 100% Halal - no pork, no alcohol, no haram ingredients."
             if profile.get('halal') else ""
+        )
+        budget_note = (
+            "CRITICAL BUDGET CONSTRAINT: This patient is cost-conscious. Every meal must use "
+            "cheap, widely available, everyday staple ingredients (lentils, seasonal local "
+            "vegetables, eggs, rice, chicken, yogurt, potatoes, bread, etc). AVOID expensive, "
+            "imported, out-of-season, or premium/specialty items (e.g. salmon, avocado, quinoa, "
+            "exotic berries, protein powders, almonds/cashews in bulk). Prefer ingredients that "
+            "are reused across multiple meals to minimise total grocery spend, and favour "
+            "bulk-buyable staples over single-use specialty items."
+            if profile.get('budget') else ""
         )
         exclusions = profile.get('exclusions') or []
         excl_note = f"STRICT exclusions: {', '.join(exclusions)}." if exclusions else ""
@@ -335,28 +448,22 @@ class NutritionPlanService:
             f"Gender:{profile['gender']}|Goal:{profile['goal']}|Activity:{profile['activity']}|"
             f"Conditions:{','.join(profile.get('diseases', [])) or 'None'}|"
             f"Calories:{profile['calories']}|Location:{profile.get('location', 'Pakistan')}\n"
-            f"{halal_note}\n{excl_note}\n{clinical_note}\n\n"
+            f"{halal_note}\n{budget_note}\n{excl_note}\n{clinical_note}\n\n"
             "CRITICAL: Every day MUST have COMPLETELY DIFFERENT meals. No repeats.\n\n"
             "You must also recommend exactly ONE product from this catalog that best "
             f"fits this patient's condition and goal:\n{catalog_lines}\n\n"
             'Respond ONLY with valid JSON:\n'
             '{"assessment":"3-4 sentence summary","days":[{"day":"Monday","breakfast":"...",'
             '"breakfastDesc":"...","lunch":"...","lunchDesc":"...","dinner":"...","dinnerDesc":"...",'
-            '"snack":"..."}, ...7 days],"exclusions":"bullet list","exercise":"weekly protocol",'
+            '"snack":"..."}, ...7 days],"exclusions":"a single markdown string with bullet points using - , NOT a JSON array","exercise":"a single markdown string describing the weekly protocol, NOT a JSON array",'
             '"suggestedProductId":"<one catalog key exactly as given above>",'
             '"productReason":"1 sentence explaining why this product fits this patient"}'
         )
-        client = _gemini_client()
-        response = client.models.generate_content(
-            model=GEMINI_MODEL,
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                temperature=0.8,
-                max_output_tokens=6000,
-                response_mime_type="application/json",
-            ),
+        text = _chat_complete(
+            [{'role': 'user', 'content': prompt}],
+            json_mode=True, max_tokens=6000, temperature=0.8,
         )
-        result = _extract_json(response.text)
+        result = _extract_json(text)
 
         # Guard against the model returning an id outside our real catalog
         if result.get('suggestedProductId') not in NutritionPlanService.PRODUCT_CATALOG:
@@ -366,28 +473,28 @@ class NutritionPlanService:
         return result
 
     @staticmethod
-    def generate_grocery_list(week_plan: list) -> dict:
-        from google.genai import types
-
+    def generate_grocery_list(week_plan: list, budget: bool = False) -> dict:
+        budget_note = (
+            "\nThe patient is on a budget-friendly plan. For each category, quantify "
+            "conservatively (avoid over-buying), consolidate duplicate ingredients across "
+            "days into one combined quantity, and where relevant append a short cost-saving "
+            "tip in parentheses (e.g. 'buy loose, not packaged', 'in-season is cheaper')."
+            if budget else ""
+        )
         prompt = (
             "You are a helpful assistant. Review this 7-day meal plan and generate a consolidated, "
             "categorized grocery shopping list.\n"
+            f"{budget_note}\n"
             'Return ONLY valid JSON in this exact format:\n'
             '{"categories": [{"name": "Produce", "items": ["4 Apples", "2 bunches Spinach"]}, '
             '{"name": "Proteins", "items": ["1kg Chicken breast"]}]}\n\n'
             f"Meal Plan: {json.dumps(week_plan)}"
         )
-        client = _gemini_client()
-        response = client.models.generate_content(
-            model=GEMINI_MODEL,
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                temperature=0.4,
-                max_output_tokens=2000,
-                response_mime_type="application/json",
-            ),
+        text = _chat_complete(
+            [{'role': 'user', 'content': prompt}],
+            json_mode=True, max_tokens=2000, temperature=0.4,
         )
-        return _extract_json(response.text)
+        return _extract_json(text)
 
 
 # ── Report analyzer (image / PDF upload -> real multimodal analysis) ──────────
@@ -421,19 +528,20 @@ class ReportAnalyzerService:
         if content_type not in REPORT_ALLOWED_MIME:
             raise ValueError("Only JPG, PNG, WEBP, or PDF reports are supported.")
 
-        file_bytes = uploaded_file.read()
+        if content_type == 'application/pdf':
+            raise ValueError(
+                "PDF analysis isn't supported on the current free model — "
+                "please upload the report as a JPG/PNG/WEBP image instead."
+            )
 
-        from google.genai import types
-        client = _gemini_client()
-        response = client.models.generate_content(
-            model=GEMINI_MODEL,
-            contents=[
-                types.Part.from_bytes(data=file_bytes, mime_type=content_type),
-                REPORT_PROMPT,
+        file_bytes = uploaded_file.read()
+        data_url = _image_data_url(file_bytes, content_type)
+
+        text = _chat_complete([{
+            'role': 'user',
+            'content': [
+                {'type': 'text', 'text': REPORT_PROMPT},
+                {'type': 'image_url', 'image_url': {'url': data_url}},
             ],
-            config=types.GenerateContentConfig(
-                max_output_tokens=1500,
-                response_mime_type="application/json",
-            ),
-        )
-        return _extract_json(response.text)
+        }], json_mode=True, max_tokens=1500, temperature=0.4)
+        return _extract_json(text)

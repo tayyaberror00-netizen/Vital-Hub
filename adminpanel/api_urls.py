@@ -4,6 +4,7 @@ from .api_views import (
     AdminProductListView, AdminProductDetailView,
     AdminOrderListView, AdminOrderDetailView,
     AdminAppointmentListView, AdminAppointmentDetailView,
+    AdminUserListView, AdminUserActivityView,
 )
 
 urlpatterns = [
@@ -14,4 +15,6 @@ urlpatterns = [
     path('orders/<int:order_id>/',  AdminOrderDetailView.as_view()),
     path('appointments/',           AdminAppointmentListView.as_view()),
     path('appointments/<int:appt_id>/', AdminAppointmentDetailView.as_view()),
+    path('users/',                  AdminUserListView.as_view()),
+    path('users/<int:user_id>/activity/', AdminUserActivityView.as_view()),
 ]

@@ -1,5 +1,13 @@
 <!DOCTYPE html>
 {% load static %}
+<script>
+    // Protected page — bounce anonymous visitors to sign-up before anything
+    // renders (server-side enforcement lives on the API endpoints; this is
+    // the UX layer so they never even see the page first).
+    if (!localStorage.getItem('vh_token')) {
+        window.location.replace('/auth.html?next=' + encodeURIComponent(window.location.pathname));
+    }
+</script>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -9,6 +17,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="{% static 'frontend/CSS/style.css' %}">
+    <link rel="stylesheet" href="{% static 'frontend/CSS/spartan-motion.css' %}">
     <style>
         input:focus, select:focus { transform:scale(1.01); transition:transform .2s cubic-bezier(.34,1.56,.64,1),border-color .2s ease; }
     </style>
@@ -218,6 +227,7 @@
     <script src="{% static 'frontend/JS/products.js' %}"></script>
     <script src="{% static 'frontend/JS/script.js' %}"></script>
     <script src="{% static 'frontend/JS/ai-assistant.js' %}"></script>
+    <script src="{% static 'frontend/JS/spartan-motion.js' %}"></script>
     <script src="{% static 'frontend/JS/animations.js' %}"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => { if (window.lucide) lucide.createIcons(); });
